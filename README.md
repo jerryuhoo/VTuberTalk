@@ -35,10 +35,16 @@ python tools/split_audio.py <aggressiveness>(0~3) <path to wav file>
 目前只支持英文的识别，中文识别尚不准确。
 
 ```
-python gen_text.py --path data
+python gen_text.py --path <data>
 ```
 
 ### 2.4. 使用字幕获得文本
+
+文件夹中可以有多个wav和srt文件，对应的wav和srt需要同名。
+
+```
+python split_audio_by_srt.py --path <data>
+```
 
 ## 3. 训练
 
