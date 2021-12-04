@@ -6,6 +6,8 @@ def process(path, output_sample_rate):
     path_list=os.listdir(path)
     print(path)
     for filename in path_list:
+        if os.path.isdir(os.path.join(path, filename)):
+            continue
         filename_suffix = os.path.splitext(filename)[1]
         print(filename)
         input_file_path = os.path.join(path, filename)
@@ -15,6 +17,7 @@ def process(path, output_sample_rate):
             sound = sound.set_frame_rate(output_sample_rate)
             sound.export(os.path.join(output_file_path), format="wav")
         elif filename_suffix == '.mp4':
+            # file name should not contain space.
             cmd = "ffmpeg -i {} -ac 1 -ar {} -f wav {}".format(input_file_path, output_sample_rate, output_file_path)
             os.system(cmd)
         else:
@@ -26,7 +29,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("--path", type=str, required=True)
     args = parser.parse_args()
-    output_sample_rate = 22050
+    output_sample_rate = 16000
     is_exist = os.path.exists(args.path)
     if not is_exist:
         print("path not existed!")
