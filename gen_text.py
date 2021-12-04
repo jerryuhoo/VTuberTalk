@@ -52,7 +52,8 @@ if __name__ == '__main__':
         os.makedirs(os.path.join(args.path, "unrecognized"))
         print("unrecognized directory is created!")
 
-    s2t_zh_model = hub.Module(name='u2_conformer_aishell')
+    # s2t_zh_model = hub.Module(name='u2_conformer_aishell')
+    s2t_zh_model = hub.Module(name='u2_conformer_librispeech')
     process(args.path, s2t_zh_model)
 
     # text_zh = s2t_zh_model.speech_recognize(args.wav_zh)

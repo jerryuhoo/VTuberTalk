@@ -141,7 +141,7 @@ def vad_collector(sample_rate, frame_duration_ms,
 def main(args):
     if len(args) != 2:
         sys.stderr.write(
-            'Usage: example.py <aggressiveness> <path to wav file>\n')
+            'Usage: split_audio.py <aggressiveness>(0~3) <path to wav file>\n')
         sys.exit(1)
     audio, sample_rate = read_wave(args[1])
     vad = webrtcvad.Vad(int(args[0]))
