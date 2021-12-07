@@ -4,7 +4,8 @@ import sys
 import wave
 
 import webrtcvad
-
+import os
+import argparse
 
 def read_wave(path):
     """Reads a .wav file.
@@ -139,20 +140,32 @@ def vad_collector(sample_rate, frame_duration_ms,
 
 
 def main(args):
-    if len(args) != 2:
-        sys.stderr.write(
-            'Usage: split_audio.py <aggressiveness>(0~3) <path to wav file>\n')
-        sys.exit(1)
-    audio, sample_rate = read_wave(args[1])
-    vad = webrtcvad.Vad(int(args[0]))
-    frames = frame_generator(30, audio, sample_rate)
-    frames = list(frames)
-    segments = vad_collector(sample_rate, 30, 300, vad, frames)
-    for i, segment in enumerate(segments):
-        path = 'chunk-%002d.wav' % (i,)
-        print(' Writing %s' % (path,))
-        write_wave(path, segment, sample_rate)
+    path_list=os.listdir(args[1])
+    if not os.path.exists(os.path.join(args[1], "split")):
+        os.makedirs(os.path.join(args[1], "split"))
+    for filename in path_list:
+        filename_suffix = os.path.splitext(filename)[1]
+        if filename_suffix == '.wav':
+            if len(args) != 2:
+                sys.stderr.write(
+                    'Usage: split_audio.py <aggressiveness>(0~3) <path to wav file>\n')
+                sys.exit(1)
+            audio, sample_rate = read_wave(os.path.join(args[1], filename))
+            vad = webrtcvad.Vad(int(args[0]))
+            frames = frame_generator(30, audio, sample_rate)
+            frames = list(frames)
+            segments = vad_collector(sample_rate, 30, 300, vad, frames)
+            for i, segment in enumerate(segments):
+                path = os.path.join(args[1], "split", os.path.splitext(filename)[0] + '_%002d.wav' % (i,))
+                print(' Writing %s' % (path,))
+                write_wave(path, segment, sample_rate)
+        else:
+            print("unsupported file")
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    is_exist = os.path.exists(sys.argv[2])
+    if not is_exist:
+        print("path not existed!")
+    else:
+        main(sys.argv[1:])
