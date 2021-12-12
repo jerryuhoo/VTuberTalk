@@ -16,16 +16,13 @@ import os
 from tqdm import tqdm
 
 import paddle
-import paddlehub as hub
+from paddlespeech.cli import ASRExecutor
 
-# yapf: disable
 parser = argparse.ArgumentParser(__doc__)
-parser.add_argument("--device", type=str, default='cpu', choices=['cpu', 'gpu'])
 parser.add_argument("--path", type=str, required=True)
 args = parser.parse_args()
-# yapf: enable
 
-def process(path, s2t_zh_model):
+def process(path):
     if os.path.exists(path):
         files=os.listdir(path)
     else:
@@ -35,8 +32,17 @@ def process(path, s2t_zh_model):
             print(file)
             file_name = os.path.splitext(file)[0]
             try:
-                text = s2t_zh_model.speech_recognize(os.path.join(path, file))
-                print(text)
+                asr_executor = ASRExecutor()
+                text = asr_executor(
+                    model='conformer_wenetspeech',
+                    lang='zh',
+                    sample_rate=16000,
+                    config=None,  # Set `config` and `ckpt_path` to None to use pretrained model.
+                    ckpt_path=None,
+                    audio_file=os.path.join(path, file),
+                    device=paddle.get_device())
+                print('{} Result: \n{}'.format(file, text))
+
                 with open(os.path.join(path, file_name + ".txt"), "w") as f:
                     f.write(text)
             except ValueError as e:
@@ -44,18 +50,10 @@ def process(path, s2t_zh_model):
                 os.replace(os.path.join(path, file), os.path.join(path, "unrecognized", file))
 
 if __name__ == '__main__':
-    paddle.set_device(args.device)
 
     # Check unrecognized exists or not
     isExist = os.path.exists(os.path.join(args.path, "unrecognized"))
     if not isExist:
         os.makedirs(os.path.join(args.path, "unrecognized"))
         print("unrecognized directory is created!")
-
-    # s2t_zh_model = hub.Module(name='u2_conformer_aishell')
-    s2t_zh_model = hub.Module(name='u2_conformer_librispeech')
-    process(args.path, s2t_zh_model)
-
-    # text_zh = s2t_zh_model.speech_recognize(args.wav_zh)
-    # with open("test.txt","w") as f:
-        # f.write(text_zh)
+    process(args.path)
