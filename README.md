@@ -15,7 +15,7 @@
 可以用TamperMonkey上的YouTube下载器下载mp4文件，再转成wav文件。
 
 ```shell
-python tools/video_to_wav.py --path <data>
+python tools/video_to_wav.py --path <data to folder or file>
 ```
 
 其中，在video_to_wav可设置采样率，一般设置为16000，因为如果要使用语音切分工具的话，16000是支持的采样率之一。
@@ -27,13 +27,13 @@ python tools/video_to_wav.py --path <data>
 音频分割使用了webrtcvad模块，其中第一个参数aggressiveness是分割检测的敏感度，数字越大，对于静音检测越敏感，分割的音频个数也越多。范围为0～3。
 
 ```shell
-python tools/split_audio.py <aggressiveness> <path to wav folder>
+python tools/split_audio.py --ag <aggressiveness> --in_path <path to wav folder or file>
 ```
 
 ### 2.3. 使用ASR获得文本
 
 ```shell
-python gen_text.py --path <data>
+python gen_text.py --path <data> --lang <language: 'en' or 'zh'>
 ```
 
 ### 2.4. 使用字幕获得文本

@@ -18,11 +18,7 @@ from tqdm import tqdm
 import paddle
 from paddlespeech.cli import ASRExecutor
 
-parser = argparse.ArgumentParser(__doc__)
-parser.add_argument("--path", type=str, required=True)
-args = parser.parse_args()
-
-def process(path):
+def process(path, lang, sr):
     if os.path.exists(path):
         files=os.listdir(path)
     else:
@@ -35,8 +31,8 @@ def process(path):
                 asr_executor = ASRExecutor()
                 text = asr_executor(
                     model='conformer_wenetspeech',
-                    lang='zh',
-                    sample_rate=16000,
+                    lang=lang,
+                    sample_rate=sr,
                     config=None,  # Set `config` and `ckpt_path` to None to use pretrained model.
                     ckpt_path=None,
                     audio_file=os.path.join(path, file),
@@ -51,9 +47,15 @@ def process(path):
 
 if __name__ == '__main__':
 
+    parser = argparse.ArgumentParser(__doc__)
+    parser.add_argument("--path", type=str, required=True)
+    parser.add_argument("--lang", type=str, default='zh')
+    parser.add_argument("--sr", type=int, default=16000)
+    args = parser.parse_args()
+
     # Check unrecognized exists or not
     isExist = os.path.exists(os.path.join(args.path, "unrecognized"))
     if not isExist:
         os.makedirs(os.path.join(args.path, "unrecognized"))
         print("unrecognized directory is created!")
-    process(args.path)
+    process(args.path, args.lang, args.sr)

@@ -140,23 +140,26 @@ def vad_collector(sample_rate, frame_duration_ms,
 
 
 def main(args):
-    path_list=os.listdir(args[1])
-    if not os.path.exists(os.path.join(args[1], "split")):
-        os.makedirs(os.path.join(args[1], "split"))
+    is_dir = os.path.isdir(args.in_path)
+    if is_dir: 
+        input_dir = args.in_path
+        path_list=os.listdir(args.in_path)
+    else: # input is a wav file
+        input_dir, basename = os.path.split(args.in_path)
+        path_list = [basename]
+    if not os.path.exists(os.path.join(input_dir, args.out_path)):
+        os.makedirs(os.path.join(input_dir, args.out_path))
     for filename in path_list:
         filename_suffix = os.path.splitext(filename)[1]
         if filename_suffix == '.wav':
-            if len(args) != 2:
-                sys.stderr.write(
-                    'Usage: split_audio.py <aggressiveness>(0~3) <path to wav file>\n')
-                sys.exit(1)
-            audio, sample_rate = read_wave(os.path.join(args[1], filename))
-            vad = webrtcvad.Vad(int(args[0]))
+            print("processing ", filename)
+            audio, sample_rate = read_wave(os.path.join(input_dir, filename))
+            vad = webrtcvad.Vad(int(args.ag))
             frames = frame_generator(30, audio, sample_rate)
             frames = list(frames)
             segments = vad_collector(sample_rate, 30, 300, vad, frames)
             for i, segment in enumerate(segments):
-                path = os.path.join(args[1], "split", os.path.splitext(filename)[0] + '_%002d.wav' % (i,))
+                path = os.path.join(input_dir, args.out_path, os.path.splitext(filename)[0] + '_%002d.wav' % (i,))
                 print(' Writing %s' % (path,))
                 write_wave(path, segment, sample_rate)
         else:
@@ -164,8 +167,16 @@ def main(args):
 
 
 if __name__ == '__main__':
-    is_exist = os.path.exists(sys.argv[2])
+    # Usage: split_audio.py --ag (0~3) --in_path <input path> --out_path <output path>
+    parser = argparse.ArgumentParser(__doc__)
+    parser.add_argument("--ag", type=int, default=3)
+    parser.add_argument("--in_path", type=str, required=True)
+    parser.add_argument("--out_path", type=str, default="../split", help="please use relative path")
+
+    args = parser.parse_args()
+
+    is_exist = os.path.exists(args.in_path)
     if not is_exist:
         print("path not existed!")
     else:
-        main(sys.argv[1:])
+        main(args)                  
