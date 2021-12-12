@@ -15,10 +15,10 @@
 可以用TamperMonkey上的YouTube下载器下载mp4文件，再转成wav文件。
 
 ```shell
-python tools/video_to_mp3.py --path <data>
+python tools/video_to_wav.py --path <data>
 ```
 
-其中，在video_to_mp3可设置采样率，一般设置为16000，因为如果要使用语音切分工具的话，16000是支持的采样率之一。
+其中，在video_to_wav可设置采样率，一般设置为16000，因为如果要使用语音切分工具的话，16000是支持的采样率之一。
 
 ### 2.2. 将音频分割成片段
 
