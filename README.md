@@ -72,6 +72,15 @@ conda install montreal-forced-aligner
 mfa align data/speaker_name/split MFA/mandarin_pinyin.dict MFA/mandarin.zip data/speaker_name/TextGrid
 ```
 
+### 2.8. 生成其他预处理文件
+
+```shell
+python tools/gen_duration_from_textgrid.py \
+        --inputdir=data/ \
+        --output=data/durations.txt \
+        --config=train/conf/default.yaml
+```
+
 ## 3. 训练
 
 WIP
