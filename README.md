@@ -96,9 +96,64 @@ python train/preprocess.py \
         --cut-sil=True
 ```
 
+compute_statistics
+
+```shell
+python tools/compute_statistics.py \
+--metadata=dump/train/raw/metadata.jsonl \
+--field-name="speech"
+
+python tools/compute_statistics.py \
+--metadata=dump/train/raw/metadata.jsonl \
+--field-name="pitch"
+
+python tools/compute_statistics.py \
+--metadata=dump/train/raw/metadata.jsonl \
+--field-name="energy"
+```
+
+normalize
+
+```shell
+python tools/normalize.py \
+--metadata=dump/train/raw/metadata.jsonl \
+--dumpdir=dump/train/norm \
+--speech-stats=dump/train/speech_stats.npy \
+--pitch-stats=dump/train/pitch_stats.npy \
+--energy-stats=dump/train/energy_stats.npy \
+--phones-dict=dump/phone_id_map.txt \
+--speaker-dict=dump/speaker_id_map.txt
+
+python tools/normalize.py \
+--metadata=dump/dev/raw/metadata.jsonl \
+--dumpdir=dump/dev/norm \
+--speech-stats=dump/train/speech_stats.npy \
+--pitch-stats=dump/train/pitch_stats.npy \
+--energy-stats=dump/train/energy_stats.npy \
+--phones-dict=dump/phone_id_map.txt \
+--speaker-dict=dump/speaker_id_map.txt
+
+python tools/normalize.py \
+--metadata=dump/test/raw/metadata.jsonl \
+--dumpdir=dump/test/norm \
+--speech-stats=dump/train/speech_stats.npy \
+--pitch-stats=dump/train/pitch_stats.npy \
+--energy-stats=dump/train/energy_stats.npy \
+--phones-dict=dump/phone_id_map.txt \
+--speaker-dict=dump/speaker_id_map.txt
+```
+
 ## 3. 训练
 
-WIP
+```shell
+python train/train.py \
+    --train-metadata=dump/train/norm/metadata.jsonl \
+    --dev-metadata=dump/dev/norm/metadata.jsonl \
+    --config=train/conf/default.yaml \
+    --output-dir=exp/fastspeech2_nosil_baker_ckpt_0.4 \
+    --ngpu=0 \
+    --phones-dict=dump/phone_id_map.txt
+```
 
 ## 4. 推理
 
