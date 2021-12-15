@@ -84,6 +84,8 @@ python tools/gen_duration_from_textgrid.py \
 ```
 
 提取features
+
+```shell
 python train/preprocess.py \
         --dataset=other \
         --rootdir=data/ \
@@ -92,6 +94,7 @@ python train/preprocess.py \
         --config=train/conf/default.yaml \
         --num-cpu=2 \
         --cut-sil=True
+```
 
 ## 3. 训练
 
