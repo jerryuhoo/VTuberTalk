@@ -41,7 +41,29 @@ python gen_text.py --path <data> --lang <language: 'en' or 'zh'>
 文件夹中可以有多个wav和srt文件，对应的wav和srt需要同名。
 
 ```shell
-python split_audio_by_srt.py --path <data>
+python tools/split_audio_by_srt.py --path <data>
+```
+
+### 2.5. 汉字转拼音
+
+```shell
+python python tools/hanzi_to_pinyin.py --path <data>
+```
+
+### 2.6. Spleeter降噪
+
+```shell
+pip install spleeter
+```
+
+### 2.7. MFA音素对齐
+
+本项目使用了百度PaddleSpeech的fastspeech2模块作为tts声学模型。
+
+安装MFA
+
+```shell
+conda install montreal-forced-aligner
 ```
 
 ## 3. 训练
