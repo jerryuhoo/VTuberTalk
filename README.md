@@ -74,12 +74,24 @@ mfa align data/speaker_name/split MFA/mandarin_pinyin.dict MFA/mandarin.zip data
 
 ### 2.8. 生成其他预处理文件
 
+生成duration
+
 ```shell
 python tools/gen_duration_from_textgrid.py \
         --inputdir=data/ \
         --output=data/durations.txt \
         --config=train/conf/default.yaml
 ```
+
+提取features
+python train/preprocess.py \
+        --dataset=other \
+        --rootdir=data/ \
+        --dumpdir=dump \
+        --dur-file=data/durations.txt \
+        --config=train/conf/default.yaml \
+        --num-cpu=2 \
+        --cut-sil=True
 
 ## 3. 训练
 
