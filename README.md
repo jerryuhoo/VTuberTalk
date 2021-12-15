@@ -66,6 +66,12 @@ pip install spleeter
 conda install montreal-forced-aligner
 ```
 
+下载[mandarin](https://montreal-forced-aligner.readthedocs.io/en/latest/user_guide/models/acoustic.html)模型，放入MFA文件夹中。
+
+```shell
+mfa align data/speaker_name/split MFA/mandarin_pinyin.dict MFA/mandarin.zip data/speaker_name/TextGrid
+```
+
 ## 3. 训练
 
 WIP
