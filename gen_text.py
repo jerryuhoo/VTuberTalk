@@ -23,12 +23,12 @@ def process(path, lang, sr):
         files=os.listdir(path)
     else:
         print('this path not exist')
+    asr_executor = ASRExecutor()
     for file in tqdm(files):
         if file.endswith('.wav'):
             print(file)
             file_name = os.path.splitext(file)[0]
             try:
-                asr_executor = ASRExecutor()
                 text = asr_executor(
                     model='conformer_wenetspeech',
                     lang=lang,
