@@ -2,7 +2,7 @@
 
 ## 1. 介绍
 
-这是一个根据VTuber的声音训练而成的TTS（text-to-speech）模型，输入文本和VTuber可以输出对应的语音。本项目基于百度PaddleSpeech。
+这是一个根据VTuber的声音训练而成的TTS（text-to-speech）模型，输入文本和VTuber可以输出对应的语音。本项目基于[百度PaddleSpeech](https://github.com/PaddlePaddle/PaddleSpeech)。
 
 ## 2. 预处理
 
@@ -152,7 +152,7 @@ python train/train.py \
     --dev-metadata=dump/dev/norm/metadata.jsonl \
     --config=train/conf/default.yaml \
     --output-dir=exp/fastspeech2_nosil_baker_ckpt_0.4 \
-    --ngpu=0 \
+    --ngpu=1 \
     --phones-dict=dump/phone_id_map.txt
 ```
 
