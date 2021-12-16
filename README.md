@@ -63,6 +63,7 @@ pip install spleeter
 安装MFA
 
 ```shell
+conda config --add channels conda-forge
 conda install montreal-forced-aligner
 ```
 
