@@ -28,6 +28,9 @@ def process(path, lang, sr):
         if file.endswith('.wav'):
             print(file)
             file_name = os.path.splitext(file)[0]
+            if os.path.exists(os.path.join(path, file_name + ".txt")):
+                print("skip ", file_name)
+                continue
             try:
                 text = asr_executor(
                     model='conformer_wenetspeech',
@@ -43,7 +46,7 @@ def process(path, lang, sr):
                     f.write(text)
             except ValueError as e:
                 print("cannot recognize")
-                os.replace(os.path.join(path, file), os.path.join(path, "unrecognized", file))
+                os.replace(os.path.join(path, file), os.path.join(path, "../unrecognized", file))
 
 if __name__ == '__main__':
 
@@ -54,8 +57,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Check unrecognized exists or not
-    isExist = os.path.exists(os.path.join(args.path, "unrecognized"))
+    isExist = os.path.exists(os.path.join(args.path, "../unrecognized"))
     if not isExist:
-        os.makedirs(os.path.join(args.path, "unrecognized"))
+        os.makedirs(os.path.join(args.path, "../unrecognized"))
         print("unrecognized directory is created!")
     process(args.path, args.lang, args.sr)
