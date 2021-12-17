@@ -7,3 +7,4 @@
 *.TextGrid
 *.npy
 data/
+dump/

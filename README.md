@@ -160,16 +160,22 @@ python train/train.py \
 
 下载[pwg_baker_ckpt_0.4.zip](https://paddlespeech.bj.bcebos.com/Parakeet/released_models/pwgan/pwg_baker_ckpt_0.4.zip)。
 
+1. fastspeech + pwg
+
 ```shell
 python train/synthesize_e2e.py \
-    --fastspeech2-config=train/conf/default.yaml \
-    --fastspeech2-checkpoint=exp/fastspeech2_nosil_baker_ckpt_0.4/checkpoints/snapshot_iter_104000.pdz \
-    --fastspeech2-stat=dump/train/speech_stats.npy \
-    --pwg-config=pwg_baker_ckpt_0.4/pwg_default.yaml \
-    --pwg-checkpoint=pwg_baker_ckpt_0.4/pwg_snapshot_iter_400000.pdz \
-    --pwg-stat=pwg_baker_ckpt_0.4/pwg_stats.npy \
-    --text=sentences.txt \
-    --output-dir=train/test_e2e \
-    --inference-dir=train/inference \
-    --phones-dict=dump/phone_id_map.txt
+        --am=fastspeech2_csmsc \
+        --am_config=train/conf/default.yaml \
+        --am_ckpt=exp/fastspeech2_nosil_baker_ckpt_0.4/checkpoints/snapshot_iter_76000.pdz \
+        --am_stat=dump/train/speech_stats.npy \
+        --voc=pwgan_csmsc \
+        --voc_config=pwg_baker_ckpt_0.4/pwg_default.yaml \
+        --voc_ckpt=pwg_baker_ckpt_0.4/pwg_snapshot_iter_400000.pdz \
+        --voc_stat=pwg_baker_ckpt_0.4/pwg_stats.npy \
+        --lang=zh \
+        --text=sentences.txt \
+        --output_dir=train/test_e2e \
+        --inference_dir=train/inference \
+        --phones_dict=dump/phone_id_map.txt \
+        --ngpu=1
 ```
