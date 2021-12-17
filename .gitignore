@@ -1,9 +1,9 @@
 
 *.wav
-*.txt
 *.mp4
 *.srt
 *.flv
 *.lab
 *.TextGrid
 *.npy
+data/

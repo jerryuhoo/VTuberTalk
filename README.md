@@ -79,69 +79,69 @@ mfa align data/speaker_name/split MFA/mandarin_pinyin.dict MFA/mandarin.zip data
 
 ```shell
 python tools/gen_duration_from_textgrid.py \
-        --inputdir=data/ \
-        --output=data/durations.txt \
-        --config=train/conf/default.yaml
+    --inputdir=data/ \
+    --output=data/durations.txt \
+    --config=train/conf/default.yaml
 ```
 
 提取features
 
 ```shell
 python train/preprocess.py \
-        --dataset=other \
-        --rootdir=data/ \
-        --dumpdir=dump \
-        --dur-file=data/durations.txt \
-        --config=train/conf/default.yaml \
-        --num-cpu=2 \
-        --cut-sil=True
+    --dataset=other \
+    --rootdir=data/ \
+    --dumpdir=dump \
+    --dur-file=data/durations.txt \
+    --config=train/conf/default.yaml \
+    --num-cpu=2 \
+    --cut-sil=True
 ```
 
 compute_statistics
 
 ```shell
 python tools/compute_statistics.py \
---metadata=dump/train/raw/metadata.jsonl \
---field-name="speech"
+    --metadata=dump/train/raw/metadata.jsonl \
+    --field-name="speech"
 
 python tools/compute_statistics.py \
---metadata=dump/train/raw/metadata.jsonl \
---field-name="pitch"
+    --metadata=dump/train/raw/metadata.jsonl \
+    --field-name="pitch"
 
 python tools/compute_statistics.py \
---metadata=dump/train/raw/metadata.jsonl \
---field-name="energy"
+    --metadata=dump/train/raw/metadata.jsonl \
+    --field-name="energy"
 ```
 
 normalize
 
 ```shell
 python tools/normalize.py \
---metadata=dump/train/raw/metadata.jsonl \
---dumpdir=dump/train/norm \
---speech-stats=dump/train/speech_stats.npy \
---pitch-stats=dump/train/pitch_stats.npy \
---energy-stats=dump/train/energy_stats.npy \
---phones-dict=dump/phone_id_map.txt \
---speaker-dict=dump/speaker_id_map.txt
+    --metadata=dump/train/raw/metadata.jsonl \
+    --dumpdir=dump/train/norm \
+    --speech-stats=dump/train/speech_stats.npy \
+    --pitch-stats=dump/train/pitch_stats.npy \
+    --energy-stats=dump/train/energy_stats.npy \
+    --phones-dict=dump/phone_id_map.txt \
+    --speaker-dict=dump/speaker_id_map.txt
 
 python tools/normalize.py \
---metadata=dump/dev/raw/metadata.jsonl \
---dumpdir=dump/dev/norm \
---speech-stats=dump/train/speech_stats.npy \
---pitch-stats=dump/train/pitch_stats.npy \
---energy-stats=dump/train/energy_stats.npy \
---phones-dict=dump/phone_id_map.txt \
---speaker-dict=dump/speaker_id_map.txt
+    --metadata=dump/dev/raw/metadata.jsonl \
+    --dumpdir=dump/dev/norm \
+    --speech-stats=dump/train/speech_stats.npy \
+    --pitch-stats=dump/train/pitch_stats.npy \
+    --energy-stats=dump/train/energy_stats.npy \
+    --phones-dict=dump/phone_id_map.txt \
+    --speaker-dict=dump/speaker_id_map.txt
 
 python tools/normalize.py \
---metadata=dump/test/raw/metadata.jsonl \
---dumpdir=dump/test/norm \
---speech-stats=dump/train/speech_stats.npy \
---pitch-stats=dump/train/pitch_stats.npy \
---energy-stats=dump/train/energy_stats.npy \
---phones-dict=dump/phone_id_map.txt \
---speaker-dict=dump/speaker_id_map.txt
+    --metadata=dump/test/raw/metadata.jsonl \
+    --dumpdir=dump/test/norm \
+    --speech-stats=dump/train/speech_stats.npy \
+    --pitch-stats=dump/train/pitch_stats.npy \
+    --energy-stats=dump/train/energy_stats.npy \
+    --phones-dict=dump/phone_id_map.txt \
+    --speaker-dict=dump/speaker_id_map.txt
 ```
 
 ## 3. 训练
@@ -158,4 +158,18 @@ python train/train.py \
 
 ## 4. 推理
 
-WIP
+下载[pwg_baker_ckpt_0.4.zip](https://paddlespeech.bj.bcebos.com/Parakeet/released_models/pwgan/pwg_baker_ckpt_0.4.zip)。
+
+```shell
+python train/synthesize_e2e.py \
+    --fastspeech2-config=train/conf/default.yaml \
+    --fastspeech2-checkpoint=exp/fastspeech2_nosil_baker_ckpt_0.4/checkpoints/snapshot_iter_104000.pdz \
+    --fastspeech2-stat=dump/train/speech_stats.npy \
+    --pwg-config=pwg_baker_ckpt_0.4/pwg_default.yaml \
+    --pwg-checkpoint=pwg_baker_ckpt_0.4/pwg_snapshot_iter_400000.pdz \
+    --pwg-stat=pwg_baker_ckpt_0.4/pwg_stats.npy \
+    --text=sentences.txt \
+    --output-dir=train/test_e2e \
+    --inference-dir=train/inference \
+    --phones-dict=dump/phone_id_map.txt
+```
