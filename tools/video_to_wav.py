@@ -10,13 +10,18 @@ def process(path, output_sample_rate, is_mono=True):
         path, basename = os.path.split(path)
         path_list = [basename]
     print(path)
+
+    output_dir = os.path.join(path, "../raw")
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+
     for filename in path_list:
         if os.path.isdir(os.path.join(path, filename)):
             continue
         filename_suffix = os.path.splitext(filename)[1]
         print(filename)
         input_file_path = os.path.join(path, filename)
-        output_file_path = os.path.join(path, os.path.splitext(filename)[0] + ".wav")
+        output_file_path = os.path.join(output_dir, os.path.splitext(filename)[0] + ".wav")
         if filename_suffix == '.flv':
             sound = AudioSegment.from_flv(input_file_path)
             sound = sound.set_frame_rate(output_sample_rate)
