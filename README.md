@@ -47,7 +47,7 @@ python tools/split_audio_by_srt.py --path <data>
 ### 2.5. 汉字转拼音
 
 ```shell
-python python tools/hanzi_to_pinyin.py --path <data>
+python tools/hanzi_to_pinyin.py --path <data>
 ```
 
 ### 2.6. Spleeter降噪
