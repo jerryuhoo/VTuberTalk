@@ -220,44 +220,53 @@ class App(QMainWindow):
         output_dir.mkdir(parents=True, exist_ok=True)
 
         for utt_id, sentence in sentences:
-            get_tone_ids = False
-            if self.am_name == 'speedyspeech':
-                get_tone_ids = True
-            if self.lang == 'zh':
-                input_ids = self.frontend.get_input_ids(
-                    sentence, merge_sentences=True, get_tone_ids=get_tone_ids)
-                phone_ids = input_ids["phone_ids"]
-                phone_ids = phone_ids[0]
-                if get_tone_ids:
-                    tone_ids = input_ids["tone_ids"]
-                    tone_ids = tone_ids[0]
-            elif self.lang == 'en':
-                input_ids = self.frontend.get_input_ids(sentence)
-                phone_ids = input_ids["phone_ids"]
-            else:
-                print("lang should in {'zh', 'en'}!")
+            if sentence == "":
+                self.messageDialog()
+                continue
+            try:
+                get_tone_ids = False
+                if self.am_name == 'speedyspeech':
+                    get_tone_ids = True
+                if self.lang == 'zh':
+                    input_ids = self.frontend.get_input_ids(
+                        sentence, merge_sentences=True, get_tone_ids=get_tone_ids)
+                    phone_ids = input_ids["phone_ids"]
+                    phone_ids = phone_ids[0]
+                    if get_tone_ids:
+                        tone_ids = input_ids["tone_ids"]
+                        tone_ids = tone_ids[0]
+                elif self.lang == 'en':
+                    input_ids = self.frontend.get_input_ids(sentence)
+                    phone_ids = input_ids["phone_ids"]
+                else:
+                    print("lang should in {'zh', 'en'}!")
 
-            with paddle.no_grad():
-                # acoustic model
-                if self.am_name == 'fastspeech2':
-                    # multi speaker
-                    if self.am_dataset in {"aishell3", "vctk"}:
-                        spk_id = paddle.to_tensor(spk_id)
-                        mel = self.am_inference(phone_ids, spk_id)
-                    else:
-                        mel = self.am_inference(phone_ids)
-                elif self.am_name == 'speedyspeech':
-                    mel = self.am_inference(phone_ids, tone_ids)
-                print("mel inference done.")
-                # vocoder
-                wav = self.voc_inference(mel)
-                print("vocoder inference done.")
-            sf.write(
-                str(output_dir / ("output.wav")),
-                wav.numpy(),
-                samplerate=self.am_config.fs)
-            print(f"write done.")
-
+                with paddle.no_grad():
+                    # acoustic model
+                    if self.am_name == 'fastspeech2':
+                        # multi speaker
+                        if self.am_dataset in {"aishell3", "vctk"}:
+                            spk_id = paddle.to_tensor(spk_id)
+                            mel = self.am_inference(phone_ids, spk_id)
+                        else:
+                            mel = self.am_inference(phone_ids)
+                    elif self.am_name == 'speedyspeech':
+                        mel = self.am_inference(phone_ids, tone_ids)
+                    print("mel inference done.")
+                    # vocoder
+                    wav = self.voc_inference(mel)
+                    print("vocoder inference done.")
+                sf.write(
+                    str(output_dir / ("output.wav")),
+                    wav.numpy(),
+                    samplerate=self.am_config.fs)
+                print(f"write done.")
+            except KeyError:
+                print("输入的文本不能为空，请检查。")
+                self.messageDialog('输入的文本不能为空，请检查。')
+            except IndexError:
+                print("输入的文本只支持中文，请检查。")
+                self.messageDialog('输入的文本只支持中文，请检查。')
 
     def onComboboxChanged(self, text):
         # self.qlabel.setText(text)
@@ -275,6 +284,11 @@ class App(QMainWindow):
         print(content)
         self.player.setMedia(content)
         self.player.play()
+
+    
+    def messageDialog(self, text):
+        msg_box = QMessageBox(QMessageBox.Warning, '错误', text)
+        msg_box.exec_()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
