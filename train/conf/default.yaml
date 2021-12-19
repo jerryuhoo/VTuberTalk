@@ -2,7 +2,7 @@
 #                FEATURE EXTRACTION SETTING               #
 ###########################################################
 
-fs: 24000          # sr
+fs: 16000          # sr
 n_fft: 2048        # FFT size.
 n_shift: 300       # Hop size.
 win_length: 1200   # Window length.
