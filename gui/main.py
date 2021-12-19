@@ -58,7 +58,7 @@ class App(QMainWindow):
         self.left = 10
         self.top = 10
         self.width = 400
-        self.height = 200
+        self.height = 300
         self.initUI()
         self.initModel()
     
@@ -69,7 +69,7 @@ class App(QMainWindow):
         # Create textbox
         self.textbox = QLineEdit(self)
         self.textbox.move(20, 20)
-        self.textbox.resize(280, 40)
+        self.textbox.resize(360, 40)
         
         # generate button
         self.generate_button = QPushButton('generate', self)
@@ -84,27 +84,58 @@ class App(QMainWindow):
         # player
         self.player = QMediaPlayer()
 
-        # combobox
-        combo = QComboBox(self)
-        combo.addItem("阿梓")
-        combo.addItem("海子姐")
+        # voice combobox
+        self.voice_label = QLabel(self)
+        self.voice_label.move(160, 80)
+        self.voice_label.setText("声音：")
 
-        combo.move(160, 80)
+        self.voice_combo = QComboBox(self)
+        self.voice_combo.addItem("阿梓")
+        self.voice_combo.addItem("海子姐")
 
-        # self.qlabel = QLabel(self)
-        # self.qlabel.move(350, 20)
+        self.voice_combo.move(240, 80)
+        self.voice_combo.resize(120, 40)
+        self.voice_combo.activated[str].connect(self.onVoiceComboboxChanged)
 
-        # combo.activated[str].connect(self.onComboboxChanged)      
+        # tts model
+
+        self.tts_model_label = QLabel(self)
+        self.tts_model_label.move(160, 120)
+        self.tts_model_label.setText("声学模型：")
+
+        self.tts_model_combo = QComboBox(self)
+        self.tts_model_combo.addItem("fastspeech2")
+        self.tts_model_combo.addItem("speedyspeech")
+
+        self.tts_model_combo.move(240, 120)
+        self.tts_model_combo.resize(120, 40)
+        self.tts_model_combo.activated[str].connect(self.onTTSModelComboboxChanged)
+
+        # vocoder model
+        self.voc_model_label = QLabel(self)
+        self.voc_model_label.move(160, 160)
+        self.voc_model_label.setText("vocoder：")
+
+        self.voc_model_combo = QComboBox(self)
+        self.voc_model_combo.addItem("parallel wavegan")
+        self.voc_model_combo.addItem("hifigan")
+
+        self.voc_model_combo.move(240, 160)
+        self.voc_model_combo.resize(120, 40)
+        self.voc_model_combo.activated[str].connect(self.onVocModelComboboxChanged)  
 
         self.show()
 
-    def initModel(self):
+    def initModel(self, tts_model=None):
         # settings
         
         self.lang = 'zh'
 
-        # self.am = "fastspeech2_csmsc"
-        self.am = "speedyspeech_csmsc"
+        if tts_model == None:
+            self.am = "fastspeech2_csmsc" # self.am = "speedyspeech_csmsc"
+        else:
+            self.am = tts_model
+        
         if (self.am == "fastspeech2_csmsc"):
             self.phones_dict = "../exp/fastspeech2_nosil_baker_ckpt_0.4/phone_id_map.txt"
             self.tones_dict = None
@@ -221,7 +252,7 @@ class App(QMainWindow):
 
         for utt_id, sentence in sentences:
             if sentence == "":
-                self.messageDialog()
+                self.messageDialog('输入的文本不能为空，请检查。')
                 continue
             try:
                 get_tone_ids = False
@@ -268,12 +299,25 @@ class App(QMainWindow):
                 print("输入的文本只支持中文，请检查。")
                 self.messageDialog('输入的文本只支持中文，请检查。')
 
-    def onComboboxChanged(self, text):
+    def onVoiceComboboxChanged(self, text):
         # self.qlabel.setText(text)
         # self.qlabel.adjustSize()
         if text == "阿梓":
             pass
         elif text == "海子姐":
+            pass
+
+    def onTTSModelComboboxChanged(self, text):
+        if text == "fastspeech2":
+            self.initModel("fastspeech2_csmsc")
+        elif text == "speedyspeech":
+            self.initModel("speedyspeech_csmsc")
+        self.loadAcousticModel()
+
+    def onVocModelComboboxChanged(self, text):
+        if text == "parallel wavegan":
+            pass
+        elif text == "hifigan":
             pass
 
     def playAudioFile(self):
