@@ -52,6 +52,8 @@ python tools/hanzi_to_pinyin.py --path <data>
 
 ### 2.6. Spleeter降噪
 
+WIP
+
 ```shell
 pip install spleeter
 ```
@@ -178,4 +180,13 @@ python train/synthesize_e2e.py \
         --inference_dir=train/inference \
         --phones_dict=dump/phone_id_map.txt \
         --ngpu=1
+```
+
+## 5. GUI界面
+
+WIP
+
+```shell
+cd gui/
+python main.py
 ```
