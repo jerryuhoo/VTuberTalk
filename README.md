@@ -229,6 +229,7 @@ python train/synthesize_e2e.py \
         --output_dir=train/test_e2e \
         --inference_dir=train/inference \
         --phones_dict=dump/phone_id_map.txt \
+        --speaker_dict=dump/speaker_id_map.txt \
         --ngpu=1 \
         --spk_id=218
 ```
