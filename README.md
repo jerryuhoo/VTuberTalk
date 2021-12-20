@@ -204,7 +204,7 @@ python train/train.py \
     --config=train/conf/default.yaml \
     --output-dir=exp/fastspeech2_bili3_aishell3 \
     --ngpu=1 \
-    --phones-dict=dump/phone_id_map.txt
+    --phones-dict=dump/phone_id_map.txt \
     --speaker-dict=dump/speaker_id_map.txt
 ```
 
