@@ -4,7 +4,7 @@
 
 这是一个根据VTuber的声音训练而成的TTS（text-to-speech）模型，输入文本和VTuber可以输出对应的语音。本项目基于[百度PaddleSpeech](https://github.com/PaddlePaddle/PaddleSpeech)。
 
-## 1. Paddle环境安装
+## 1. 环境安装 && 准备
 
 python >= 3.8
 
@@ -22,6 +22,33 @@ CPU安装：
 
 ```shell
 pip install paddlepaddle paddlespeech
+```
+
+目录结构：
+
+```
+├── train
+├── gui
+├── tools
+├── MFA
+│   ├── mandarin_pinyin.dict
+│   └── mandarin.zip
+└── data
+    ├── wav
+    │   ├── speaker_name1
+    │   │   ├── video
+    │   │   ├── raw
+    │   │   ├── unrecognized            
+    │   │   └── split   
+    │   │       ├── .wav 
+    │   │       ├── .txt
+    │   │       └── .lab 
+    │   └── speaker_name2
+    ├── TextGrid
+    │   ├── speaker_name1
+    │   │   └── .TextGrid
+    │   └── speaker_name2
+    └── durations.txt
 ```
 
 ## 2. 预处理
@@ -92,8 +119,10 @@ conda install montreal-forced-aligner
 下载[mandarin](https://montreal-forced-aligner.readthedocs.io/en/latest/user_guide/models/acoustic.html)模型，放入MFA文件夹中。
 
 ```shell
-mfa align data/speaker_name/split MFA/mandarin_pinyin.dict MFA/mandarin.zip data/TextGrid/speaker_name
+mfa align data/wav/speaker_name/split MFA/mandarin_pinyin.dict MFA/mandarin.zip data/TextGrid/speaker_name
 ```
+
+> 如果再使用需要加```--clean```
 
 ### 2.8. 生成其他预处理文件
 
@@ -101,7 +130,7 @@ mfa align data/speaker_name/split MFA/mandarin_pinyin.dict MFA/mandarin.zip data
 
 ```shell
 python tools/gen_duration_from_textgrid.py \
-    --inputdir=data/ \
+    --inputdir=data/TextGrid \
     --output=data/durations.txt \
     --config=train/conf/default.yaml
 ```

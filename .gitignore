@@ -12,3 +12,4 @@ exp/
 train/inference/
 train/test_e2e/
 pwg_baker_ckpt_0.4/
+*.zip

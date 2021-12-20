@@ -69,7 +69,7 @@ def gen_duration_from_textgrid(inputdir, output, sample_rate=24000,
     speakers = [dir for dir in list_dir if os.path.isdir(inputdir / dir)]
     for speaker in speakers:
         # subdir = inputdir / speaker
-        subdir = os.path.join(inputdir, speaker, 'TextGrid')
+        subdir = os.path.join(inputdir, speaker)
         if not os.path.exists(subdir):
             continue
         for file in os.listdir(subdir):
