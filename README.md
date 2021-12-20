@@ -1,8 +1,28 @@
 # VTuberTalk
 
-## 1. 介绍
+## 0. 介绍
 
 这是一个根据VTuber的声音训练而成的TTS（text-to-speech）模型，输入文本和VTuber可以输出对应的语音。本项目基于[百度PaddleSpeech](https://github.com/PaddlePaddle/PaddleSpeech)。
+
+## 1. Paddle环境安装
+
+python >= 3.8
+
+参考[paddlepaddle安装](https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/install/pip/linux-pip.html)
+
+GPU安装:
+
+```shell
+python -m pip install paddlepaddle-gpu==2.2.1.post112 -f https://www.paddlepaddle.org.cn/whl/linux/mkl/avx/stable.html
+
+pip install paddlespeech
+```
+
+CPU安装：
+
+```shell
+pip install paddlepaddle paddlespeech
+```
 
 ## 2. 预处理
 
@@ -72,7 +92,7 @@ conda install montreal-forced-aligner
 下载[mandarin](https://montreal-forced-aligner.readthedocs.io/en/latest/user_guide/models/acoustic.html)模型，放入MFA文件夹中。
 
 ```shell
-mfa align data/speaker_name/split MFA/mandarin_pinyin.dict MFA/mandarin.zip data/speaker_name/TextGrid
+mfa align data/speaker_name/split MFA/mandarin_pinyin.dict MFA/mandarin.zip data/TextGrid/speaker_name
 ```
 
 ### 2.8. 生成其他预处理文件
