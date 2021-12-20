@@ -202,7 +202,7 @@ python train/train.py \
     --train-metadata=dump/train/norm/metadata.jsonl \
     --dev-metadata=dump/dev/norm/metadata.jsonl \
     --config=train/conf/default.yaml \
-    --output-dir=exp/fastspeech2_nosil_baker_ckpt_0.4 \
+    --output-dir=exp/fastspeech2_bili3_aishell3 \
     --ngpu=1 \
     --phones-dict=dump/phone_id_map.txt
 ```
@@ -217,7 +217,7 @@ python train/train.py \
 python train/synthesize_e2e.py \
         --am=fastspeech2_csmsc \
         --am_config=train/conf/default.yaml \
-        --am_ckpt=exp/fastspeech2_nosil_baker_ckpt_0.4/checkpoints/snapshot_iter_76000.pdz \
+        --am_ckpt=exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_<iter num>.pdz \
         --am_stat=dump/train/speech_stats.npy \
         --voc=pwgan_csmsc \
         --voc_config=pwg_baker_ckpt_0.4/pwg_default.yaml \
@@ -228,7 +228,8 @@ python train/synthesize_e2e.py \
         --output_dir=train/test_e2e \
         --inference_dir=train/inference \
         --phones_dict=dump/phone_id_map.txt \
-        --ngpu=1
+        --ngpu=1 \
+        --spk_id=218
 ```
 
 ## 5. GUI界面
