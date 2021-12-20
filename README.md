@@ -205,6 +205,7 @@ python train/train.py \
     --output-dir=exp/fastspeech2_bili3_aishell3 \
     --ngpu=1 \
     --phones-dict=dump/phone_id_map.txt
+    --speaker-dict=dump/speaker_id_map.txt
 ```
 
 ## 4. 推理
@@ -215,7 +216,7 @@ python train/train.py \
 
 ```shell
 python train/synthesize_e2e.py \
-        --am=fastspeech2_csmsc \
+        --am=fastspeech2_aishell3 \
         --am_config=train/conf/default.yaml \
         --am_ckpt=exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_<iter num>.pdz \
         --am_stat=dump/train/speech_stats.npy \
