@@ -65,6 +65,7 @@ class App(QMainWindow):
         self.voice_combo = QComboBox(self)
         self.voice_combo.addItem("阿梓")
         self.voice_combo.addItem("海子姐")
+        self.voice_combo.addItem("老菊")
 
         self.voice_combo.move(240, 80)
         self.voice_combo.resize(120, 40)
@@ -79,7 +80,8 @@ class App(QMainWindow):
         self.tts_style_combo = QComboBox(self)
         self.tts_style_combo.addItem("正常")
         self.tts_style_combo.addItem("机器楞")
-        self.tts_style_combo.addItem("高音")
+        self.tts_style_combo.addItem("芜湖起飞")
+        self.tts_style_combo.addItem("玉玉了")
 
         self.tts_style_combo.move(240, 120)
         self.tts_style_combo.resize(120, 40)
@@ -93,6 +95,7 @@ class App(QMainWindow):
         self.tts_speed_combo.addItem("1.0x")
         self.tts_speed_combo.addItem("0.8x")
         self.tts_speed_combo.addItem("1.2x")
+        self.tts_speed_combo.addItem("古神")
 
         self.tts_speed_combo.move(240, 160)
         self.tts_speed_combo.resize(120, 40)
@@ -129,6 +132,8 @@ class App(QMainWindow):
         self.ngpu = 0
         self.style = "Normal"
         self.speed = "1.0xspeed"
+        self.speaker_dict="speaker_id_map.txt"
+        self.spk_id = 218
 
         if self.ngpu == 0:
             paddle.set_device("cpu")
@@ -210,13 +215,17 @@ class App(QMainWindow):
 
         if self.tts_style_combo.currentText == "机器楞":
             self.style = "robot"
-        elif self.tts_style_combo.currentText == "高音":
-            self.style = "child_voice"
+        elif self.tts_style_combo.currentText == "芜湖起飞":
+            self.style = "high_voice"
+        elif self.tts_style_combo.currentText == "玉玉了":
+            self.style = "low_voice"
 
         if self.tts_speed_combo.currentText == "1.2x":
             self.speed = "1.2xspeed"
         elif self.tts_speed_combo.currentText == "0.8x":
             self.speed = "0.8xspeed"
+        elif self.tts_speed_combo.currentText == "古神":
+            self.speed = "3.0xspeed"
 
         if self.style == "robot":
             # all tones in phones be `1`
@@ -226,8 +235,12 @@ class App(QMainWindow):
             durations_scale = 1 / 1.2
         if self.speed == "0.8xspeed":
             durations_scale = 1 / 0.8
-        if self.style == "child_voice":
+        if self.speed == "3.0xspeed":
+            durations_scale = 1 / 3.0
+        if self.style == "high_voice":
             pitch_scale = 1.3
+        if self.style == "low_voice":
+            pitch_scale = 0.7
         
         for utt_id, sentence in sentences:
             input_ids = self.frontend.get_input_ids(
@@ -260,17 +273,21 @@ class App(QMainWindow):
         # self.qlabel.setText(text)
         # self.qlabel.adjustSize()
         if text == "阿梓":
-            pass
+            self.spk_id = 218
         elif text == "海子姐":
-            pass
+            self.spk_id = 219
+        elif text == "老菊":
+            self.spk_id = 220
 
     def onTTSStyleComboboxChanged(self, text):
         if text == "正常":
             pass
         elif text == "机器楞":
             self.style = "robot"
-        elif text == "高音":
-            self.style = "child_voice"
+        elif text == "芜湖起飞":
+            self.style = "high_voice"
+        elif text == "玉玉了":
+            self.style = "low_voice"
         
     def onTTSSpeedComboboxChanged(self, text):
         if text == "1.0x":
@@ -279,6 +296,8 @@ class App(QMainWindow):
             self.speed = "1.2xspeed"
         elif text == "0.8x":
             self.speed = "0.8xspeed"
+        elif text == "古神":
+            self.speed = "3.0xspeed"
 
     def onVocModelComboboxChanged(self, text):
         if text == "parallel wavegan":
