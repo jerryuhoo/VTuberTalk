@@ -17,7 +17,9 @@ from yacs.config import CfgNode
 
 from paddlespeech.t2s.frontend.zh_frontend import Frontend
 from paddlespeech.t2s.models.fastspeech2 import FastSpeech2
-from paddlespeech.t2s.models.fastspeech2 import StyleFastSpeech2Inference
+# from paddlespeech.t2s.models.fastspeech2 import StyleFastSpeech2Inference
+sys.path.append("..") 
+from train.model.fastspeech2 import StyleFastSpeech2Inference
 from paddlespeech.t2s.models.parallel_wavegan import PWGGenerator
 from paddlespeech.t2s.models.parallel_wavegan import PWGInference
 from paddlespeech.t2s.modules.normalizer import ZScore
@@ -121,7 +123,7 @@ class App(QMainWindow):
         # parse args and config and redirect to train_sp
         
         self.fastspeech2_config_path = "../exp/fastspeech2_bili3_aishell3/default.yaml"
-        self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_30725.pdz"
+        self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_43015.pdz"
         self.fastspeech2_stat = "../exp/fastspeech2_bili3_aishell3/speech_stats.npy"
         self.fastspeech2_pitch_stat = "../exp/fastspeech2_bili3_aishell3/pitch_stats.npy"
         self.fastspeech2_energy_stat = "../exp/fastspeech2_bili3_aishell3/energy_stats.npy"
@@ -145,11 +147,28 @@ class App(QMainWindow):
         with open(self.pwg_config_path) as f:
             self.pwg_config = CfgNode(yaml.safe_load(f))
 
+        self.voice_cloning = None
+
+        fields = ["utt_id", "text"]
+        self.spk_num = None
+        if self.speaker_dict:
+            print("multiple speaker fastspeech2!")
+            with open(self.speaker_dict, 'rt') as f:
+                spk_id_list = [line.strip().split() for line in f.readlines()]
+            self.spk_num = len(spk_id_list)
+            fields += ["spk_id"]
+        elif self.voice_cloning:
+            print("voice cloning!")
+            fields += ["spk_emb"]
+        else:
+            print("single speaker fastspeech2!")
+        print("spk_num:", self.spk_num)
+
         self.loadAcousticModel()
         self.loadVocoderModel()
 
         self.frontend = Frontend(phone_vocab_path=self.phones_dict)
-        print("frontend done!")
+        print("frontend done!") 
     
     def loadAcousticModel(self):
         # acoustic model
@@ -160,7 +179,7 @@ class App(QMainWindow):
 
         odim = self.fastspeech2_config.n_mels
         self.model = FastSpeech2(
-            idim=vocab_size, odim=odim, **self.fastspeech2_config["model"])
+            idim=vocab_size, odim=odim, **self.fastspeech2_config["model"], spk_num=self.spk_num)
 
         self.model.set_state_dict(
             paddle.load(self.fastspeech2_checkpoint)["main_params"])
@@ -246,7 +265,7 @@ class App(QMainWindow):
             input_ids = self.frontend.get_input_ids(
                 sentence, merge_sentences=True, robot=robot)
             phone_ids = input_ids["phone_ids"][0]
-
+            print("self.spk_id", self.spk_id)
             with paddle.no_grad():
                 mel = fastspeech2_inference(
                     phone_ids,
@@ -259,7 +278,10 @@ class App(QMainWindow):
                     energy=energy,
                     energy_scale=energy_scale,
                     energy_bias=energy_bias,
-                    robot=robot)
+                    robot=robot,
+                    spk_emb=None,
+                    spk_id=self.spk_id
+                    )
                 wav = pwg_inference(mel)
 
             sf.write(
@@ -274,9 +296,9 @@ class App(QMainWindow):
         # self.qlabel.adjustSize()
         if text == "阿梓":
             self.spk_id = 218
-        elif text == "海子姐":
-            self.spk_id = 219
         elif text == "老菊":
+            self.spk_id = 219
+        elif text == "海子姐":
             self.spk_id = 220
 
     def onTTSStyleComboboxChanged(self, text):

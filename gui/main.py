@@ -91,6 +91,7 @@ class App(QMainWindow):
 
         self.voice_combo = QComboBox(self)
         self.voice_combo.addItem("阿梓")
+        self.voice_combo.addItem("老菊")
         self.voice_combo.addItem("海子姐")
 
         self.voice_combo.move(240, 80)
@@ -105,7 +106,7 @@ class App(QMainWindow):
 
         self.tts_model_combo = QComboBox(self)
         self.tts_model_combo.addItem("fastspeech2")
-        self.tts_model_combo.addItem("speedyspeech")
+        # self.tts_model_combo.addItem("speedyspeech")
 
         self.tts_model_combo.move(240, 120)
         self.tts_model_combo.resize(120, 40)
@@ -132,7 +133,7 @@ class App(QMainWindow):
         self.lang = 'zh'
 
         if tts_model == None:
-            self.am = "fastspeech2_csmsc" # self.am = "speedyspeech_csmsc"
+            self.am = "fastspeech2_aishell3" # self.am = "speedyspeech_csmsc"
         else:
             self.am = tts_model
         
@@ -152,6 +153,15 @@ class App(QMainWindow):
             with open("../exp/speedyspeech_nosil_baker_ckpt_0.5/default.yaml") as f:
                 self.am_config = CfgNode(yaml.safe_load(f))
             self.tones_dict = "../exp/speedyspeech_nosil_baker_ckpt_0.5/tone_id_map.txt"
+        elif (self.am == "fastspeech2_aishell3"):
+            self.phones_dict = "../exp/fastspeech2_bili3_aishell3/phone_id_map.txt"
+            self.tones_dict = None
+            self.speaker_dict = "../exp/fastspeech2_bili3_aishell3/speaker_id_map.txt"
+            self.am_ckpt = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_43015.pdz"
+            self.am_stat = "../exp/fastspeech2_bili3_aishell3/speech_stats.npy"
+            with open("../exp/fastspeech2_bili3_aishell3/default.yaml") as f:
+                self.am_config = CfgNode(yaml.safe_load(f))
+            self.spk_id = 218
 
         self.voc = "pwgan_csmsc"
         self.voc_config = "../pwg_baker_ckpt_0.4/pwg_default.yaml"
@@ -277,8 +287,8 @@ class App(QMainWindow):
                     if self.am_name == 'fastspeech2':
                         # multi speaker
                         if self.am_dataset in {"aishell3", "vctk"}:
-                            spk_id = paddle.to_tensor(spk_id)
-                            mel = self.am_inference(phone_ids, spk_id)
+                            self.spk_id = paddle.to_tensor(self.spk_id)
+                            mel = self.am_inference(phone_ids, self.spk_id)
                         else:
                             mel = self.am_inference(phone_ids)
                     elif self.am_name == 'speedyspeech':
@@ -298,14 +308,17 @@ class App(QMainWindow):
             except IndexError:
                 print("输入的文本只支持中文，请检查。")
                 self.messageDialog('输入的文本只支持中文，请检查。')
+        self.playAudioFile()
 
     def onVoiceComboboxChanged(self, text):
         # self.qlabel.setText(text)
         # self.qlabel.adjustSize()
         if text == "阿梓":
-            pass
+            self.spk_id = 218
+        elif text == "老菊":
+            self.spk_id = 219
         elif text == "海子姐":
-            pass
+            self.spk_id = 220
 
     def onTTSModelComboboxChanged(self, text):
         if text == "fastspeech2":
