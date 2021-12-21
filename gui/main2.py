@@ -120,19 +120,19 @@ class App(QMainWindow):
         # settings
         # parse args and config and redirect to train_sp
         
-        self.fastspeech2_config_path = "../exp/fastspeech2_nosil_baker_ckpt_0.4/default.yaml"
-        self.fastspeech2_checkpoint = "../exp/fastspeech2_nosil_baker_ckpt_0.4/checkpoints/snapshot_iter_76000.pdz"
-        self.fastspeech2_stat = "../exp/fastspeech2_nosil_baker_ckpt_0.4/speech_stats.npy"
-        self.fastspeech2_pitch_stat = "../exp/fastspeech2_nosil_baker_ckpt_0.4/pitch_stats.npy"
-        self.fastspeech2_energy_stat = "../exp/fastspeech2_nosil_baker_ckpt_0.4/energy_stats.npy"
+        self.fastspeech2_config_path = "../exp/fastspeech2_bili3_aishell3/default.yaml"
+        self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_30725.pdz"
+        self.fastspeech2_stat = "../exp/fastspeech2_bili3_aishell3/speech_stats.npy"
+        self.fastspeech2_pitch_stat = "../exp/fastspeech2_bili3_aishell3/pitch_stats.npy"
+        self.fastspeech2_energy_stat = "../exp/fastspeech2_bili3_aishell3/energy_stats.npy"
         self.pwg_config_path = "../pwg_baker_ckpt_0.4/pwg_default.yaml"
         self.pwg_checkpoint = "../pwg_baker_ckpt_0.4/pwg_snapshot_iter_400000.pdz" 
         self.pwg_stat = "../pwg_baker_ckpt_0.4/pwg_stats.npy"
-        self.phones_dict = "phone_id_map.txt"
+        self.phones_dict = "../exp/fastspeech2_bili3_aishell3/phone_id_map.txt"
         self.ngpu = 0
         self.style = "Normal"
         self.speed = "1.0xspeed"
-        self.speaker_dict="speaker_id_map.txt"
+        self.speaker_dict="../exp/fastspeech2_bili3_aishell3/speaker_id_map.txt"
         self.spk_id = 218
 
         if self.ngpu == 0:

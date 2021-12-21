@@ -242,9 +242,15 @@ python train/synthesize_e2e.py \
 
 ## 5. GUI界面
 
-WIP
+安装依赖库：
+
+```shell
+pip install PyQt5
+```
+
+启动GUI界面：
 
 ```shell
 cd gui/
-python main.py
+python main2.py
 ```
