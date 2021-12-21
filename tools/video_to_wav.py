@@ -28,7 +28,7 @@ def process(path, output_sample_rate, is_mono=True):
             if is_mono:
                 sound = sound.set_channels(1)
             sound.export(os.path.join(output_file_path), format="wav")
-        elif filename_suffix == '.mp4':
+        elif filename_suffix == '.mp4' or filename_suffix == '.mp3':
             # file name should not contain space.
             if is_mono:
                 cmd = "ffmpeg -i {} -ac 1 -ar {} -f wav {}".format(input_file_path, output_sample_rate, output_file_path)

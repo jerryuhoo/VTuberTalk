@@ -61,6 +61,12 @@ pip install paddlepaddle paddlespeech
 从YouTube获取音频的方法：
 可以用TamperMonkey上的YouTube下载器下载mp4文件，再转成wav文件。
 
+安装依赖库：
+
+```shell
+pip install pydub
+```
+
 ```shell
 python tools/video_to_wav.py --path <data to folder or file>
 ```
