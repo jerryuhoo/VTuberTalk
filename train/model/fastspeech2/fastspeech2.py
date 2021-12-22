@@ -994,7 +994,10 @@ class StyleFastSpeech2Inference(FastSpeech2Inference):
             durations=durations,
             pitch=pitch,
             energy=energy,
-            use_teacher_forcing=True)
+            use_teacher_forcing=True,
+            spk_emb=spk_emb, 
+            spk_id=spk_id
+            )
 
         logmel = self.normalizer.inverse(normalized_mel)
         return logmel
