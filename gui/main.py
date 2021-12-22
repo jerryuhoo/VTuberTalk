@@ -246,7 +246,7 @@ class App(QMainWindow):
         voc_normalizer = ZScore(voc_mu, voc_std)
         self.voc_inference = voc_inference_class(voc_normalizer, voc)
         self.voc_inference.eval()
-        print("voc done!")
+        print(voc_name + " voc done!")
 
     @pyqtSlot()
     def onGenerateButtonClicked(self):
@@ -329,9 +329,23 @@ class App(QMainWindow):
 
     def onVocModelComboboxChanged(self, text):
         if text == "parallel wavegan":
-            pass
+            self.voc = "pwgan_csmsc"
+            self.voc_config = "../pwg_baker_ckpt_0.4/pwg_default.yaml"
+            self.voc_ckpt = "../pwg_baker_ckpt_0.4/pwg_snapshot_iter_400000.pdz"
+            self.voc_stat = "../pwg_baker_ckpt_0.4/pwg_stats.npy"
+            self.output_dir = "./"
+            with open(self.voc_config) as f:
+                self.voc_config = CfgNode(yaml.safe_load(f))
+            self.loadVocoderModel()
         elif text == "hifigan":
-            pass
+            self.voc = "hifigan_csmsc"
+            self.voc_config = "../hifigan_csmsc_ckpt_0.1.1/default.yaml"
+            self.voc_ckpt = "../hifigan_csmsc_ckpt_0.1.1/snapshot_iter_2500000.pdz"
+            self.voc_stat = "../hifigan_csmsc_ckpt_0.1.1/feats_stats.npy"
+            self.output_dir = "./"
+            with open(self.voc_config) as f:
+                self.voc_config = CfgNode(yaml.safe_load(f))
+            self.loadVocoderModel()
 
     def playAudioFile(self):
         full_file_path = os.path.join(os.getcwd(), 'output.wav')
