@@ -128,7 +128,9 @@ conda install montreal-forced-aligner
 mfa align data/wav/speaker_name/split MFA/mandarin_pinyin.dict MFA/mandarin.zip data/TextGrid/speaker_name
 ```
 
-> 如果再使用需要加```--clean```
+> 如果再使用需要加`--clean`
+
+> 如果要生成MFA1.x版本（包含sp和sil信息）需要加`--disable_textgrid_cleanup True`
 
 ### 2.8. 生成其他预处理文件
 
@@ -240,7 +242,7 @@ python train/synthesize_e2e.py \
         --spk_id=218
 ```
 
-## 5. GUI界面
+## 5. GUI界面 (WIP)
 
 安装依赖库：
 
