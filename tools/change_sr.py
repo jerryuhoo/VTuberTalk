@@ -1,19 +1,35 @@
 """
 change wav sample rate
 """
-
+import argparse
 import os
 import librosa
 import soundfile as sf
-sample_rate_before = 48000
-sample_rate_after = 16000
 
-g = os.walk(r"./")
+def main():
+    parser = argparse.ArgumentParser(
+        description="Change audio sample rate.")
+    parser.add_argument(
+        "--path",
+        required=True,
+        type=str,
+        help="input folder path")
+    parser.add_argument(
+        "--sr", type=str, required=True, help="output sample rate.")
+    args = parser.parse_args()
 
-for path, dir_list, file_list in g:
-    for file in file_list:
-        if file.endswith('.wav'):
-            print("resampling: ", os.path.join(path, file))
-            y, sr = librosa.load(file, sr=sample_rate_before)
-            y_out = librosa.resample(y, sr, sample_rate_after)
-            sf.write(file, y_out, sample_rate_after, subtype='PCM_24')
+    g = os.walk(args.path)
+    sample_rate = int(args.sr)
+    for path, dir_list, file_list in g:
+        for file in file_list:
+            if file.endswith('.wav') or file.endswith('.mp3'):
+                file_path = os.path.join(args.path, file)
+                print("resampling: ", file_path)
+                y, sr = librosa.load(file_path, sr=sample_rate)
+                if file.endswith('.mp3'):
+                    file_path = os.path.join(args.path, os.path.splitext(file)[0] + ".wav")
+                sf.write(file_path, y, sample_rate, subtype='PCM_24')
+    print("change sample rate to ", sample_rate, " , Done.")
+
+if __name__ == '__main__':
+    main()
