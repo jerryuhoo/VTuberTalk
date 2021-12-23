@@ -222,7 +222,7 @@ python train/train.py \
 
 下载[hifigan_csmsc_ckpt_0.1.1.zip](https://paddlespeech.bj.bcebos.com/Parakeet/released_models/hifigan/hifigan_csmsc_ckpt_0.1.1.zip)。
 
-1. fastspeech + pwg
+### 1. fastspeech + pwg + multiple
 
 ```shell
 python train/synthesize_e2e.py \
@@ -242,6 +242,26 @@ python train/synthesize_e2e.py \
         --speaker_dict=dump/speaker_id_map.txt \
         --ngpu=1 \
         --spk_id=218
+```
+
+### 2. fastspeech + hifigan + single
+
+```shell
+python train/synthesize_e2e.py \
+        --am=fastspeech2_csmsc \
+        --am_config=train/conf/default_single.yaml \
+        --am_ckpt=exp/fastspeech2_ghost/checkpoints/snapshot_iter_<iter num>.pdz \
+        --am_stat=dump/train/speech_stats.npy \
+        --voc=hifigan_csmsc \
+        --voc_config=hifigan_csmsc_ckpt_0.1.1/default.yaml \
+        --voc_ckpt=hifigan_csmsc_ckpt_0.1.1/snapshot_iter_2500000.pdz \
+        --voc_stat=hifigan_csmsc_ckpt_0.1.1/feats_stats.npy \
+        --lang=zh \
+        --text=sentences.txt \
+        --output_dir=train/test_e2e \
+        --inference_dir=train/inference \
+        --phones_dict=dump/phone_id_map.txt \
+        --ngpu=1
 ```
 
 ## 5. GUI界面 (WIP)
