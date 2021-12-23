@@ -140,7 +140,7 @@ mfa align data/wav/speaker_name/split MFA/mandarin_pinyin.dict MFA/mandarin.zip 
 python tools/gen_duration_from_textgrid.py \
     --inputdir=data/TextGrid \
     --output=data/durations.txt \
-    --config=train/conf/default.yaml
+    --config=train/conf/default_multi.yaml
 ```
 
 提取features
@@ -151,8 +151,8 @@ python train/preprocess.py \
     --rootdir=data/ \
     --dumpdir=dump \
     --dur-file=data/durations.txt \
-    --config=train/conf/default.yaml \
-    --num-cpu=2 \
+    --config=train/conf/default_multi.yaml \
+    --num-cpu=16 \
     --cut-sil=True
 ```
 
@@ -209,7 +209,7 @@ python tools/normalize.py \
 python train/train.py \
     --train-metadata=dump/train/norm/metadata.jsonl \
     --dev-metadata=dump/dev/norm/metadata.jsonl \
-    --config=train/conf/default.yaml \
+    --config=train/conf/default_multi.yaml \
     --output-dir=exp/fastspeech2_bili3_aishell3 \
     --ngpu=1 \
     --phones-dict=dump/phone_id_map.txt \
@@ -227,7 +227,7 @@ python train/train.py \
 ```shell
 python train/synthesize_e2e.py \
         --am=fastspeech2_aishell3 \
-        --am_config=train/conf/default.yaml \
+        --am_config=train/conf/default_multi.yaml \
         --am_ckpt=exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_<iter num>.pdz \
         --am_stat=dump/train/speech_stats.npy \
         --voc=pwgan_csmsc \
