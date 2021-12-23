@@ -250,6 +250,7 @@ python train/synthesize_e2e.py \
 
 ```shell
 pip install PyQt5
+pip install sounddevice
 ```
 
 启动GUI界面：

@@ -1,9 +1,9 @@
 import sys
 import os
-from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QPushButton, QAction, QLineEdit, QMessageBox, QComboBox, QLabel
+from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QPushButton, QAction, QLineEdit, QMessageBox, QComboBox, QLabel, QFileDialog
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import pyqtSlot, QUrl
-from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
+import sounddevice as sd
 
 # from paddle
 import argparse
@@ -52,12 +52,14 @@ class App(QMainWindow):
         self.generate_button.clicked.connect(self.onGenerateButtonClicked)
         
         # play button
-        self.play_button = QPushButton('play', self)
+        self.play_button = QPushButton('replay', self)
         self.play_button.move(20, 120)
         self.play_button.clicked.connect(self.playAudioFile)
 
-        # player
-        self.player = QMediaPlayer()
+        # save button
+        self.save_button = QPushButton('save', self)
+        self.save_button.move(20, 160)
+        self.save_button.clicked.connect(self.saveWavFile)
 
         # voice combobox
         self.voice_label = QLabel(self)
@@ -136,6 +138,8 @@ class App(QMainWindow):
         self.speed = "1.0xspeed"
         self.speaker_dict="../exp/fastspeech2_bili3_aishell3/speaker_id_map.txt"
         self.spk_id = 218
+        self.wav = None
+
 
         if self.ngpu == 0:
             paddle.set_device("cpu")
@@ -282,18 +286,28 @@ class App(QMainWindow):
                     spk_emb=None,
                     spk_id=self.spk_id
                     )
-                wav = pwg_inference(mel)
-
-            sf.write(
-                "output.wav",
-                wav.numpy(),
-                samplerate=self.fastspeech2_config.fs)
+                self.wav = pwg_inference(mel)
             print(f"{self.style}_{utt_id} done!")
+
         self.playAudioFile()
 
+    def saveWavFile(self):
+        if type(self.wav) != type(None):
+            dialog = QFileDialog()
+            dialog.setDefaultSuffix(".wav")
+            fpath, _ = dialog.getSaveFileName(
+                parent=self,
+                caption="Select a path to save the audio file",
+                filter="Audio Files (*.flac *.wav)"
+            )
+            if fpath:
+                if Path(fpath).suffix == "":
+                    fpath += ".wav"
+                sf.write(fpath, self.wav.numpy(), samplerate=self.fastspeech2_config.fs)
+        else:
+            self.messageDialog("还没有合成声音，无法保存！")
+
     def onVoiceComboboxChanged(self, text):
-        # self.qlabel.setText(text)
-        # self.qlabel.adjustSize()
         if text == "阿梓":
             self.spk_id = 218
         elif text == "老菊":
@@ -328,13 +342,13 @@ class App(QMainWindow):
             pass
 
     def playAudioFile(self):
-        full_file_path = os.path.join(os.getcwd(), 'output.wav')
-        url = QUrl.fromLocalFile(full_file_path)
-        content = QMediaContent(url)
-        print("play")
-        print(content)
-        self.player.setMedia(content)
-        self.player.play()
+        try:
+            sd.stop()
+            sd.play(self.wav, self.fastspeech2_config.fs)
+        except Exception as e:
+            print(e)
+            self.log("Error in audio playback. Try selecting a different audio output device.")
+            self.log("Your device must be connected before you start the toolbox.")
 
     
     def messageDialog(self, text):
