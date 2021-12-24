@@ -86,7 +86,7 @@ python tools/split_audio.py --ag <aggressiveness> --in_path <data/wav/speaker_na
 ### 2.3. 使用ASR获得文本
 
 ```shell
-python gen_text.py --path <data/wav/speaker_name/split> --lang <language: 'en' or 'zh'>
+python tools/gen_text.py --path <data/wav/speaker_name/split> --lang <language: 'en' or 'zh'>
 ```
 
 ### 2.4. 使用字幕获得文本
@@ -151,15 +151,31 @@ python tools/gen_duration_from_textgrid.py \
 
 提取features
 
+1. fastspeech2 模型（多人）：
+
 ```shell
-python train/preprocess.py \
+python train/exps/fastspeech2/preprocess.py \
     --dataset=other \
     --rootdir=data/ \
     --dumpdir=dump \
     --dur-file=data/durations.txt \
-    --config=train/conf/default_multi.yaml \
+    --config=train/conf/fastspeech2/default_multi.yaml \
     --num-cpu=16 \
     --cut-sil=True
+```
+
+2. speedyspeech 模型：
+
+```shell
+python train/exps/speedyspeech/preprocess.py \
+    --dataset=other \
+    --rootdir=data/ \
+    --dumpdir=dump \
+    --dur-file=data/durations.txt \
+    --config=train/conf/speedyspeech/default.yaml \
+    --num-cpu=16 \
+    --cut-sil=True \
+    --use-relative-path=True
 ```
 
 compute_statistics
@@ -180,8 +196,10 @@ python tools/compute_statistics.py \
 
 normalize
 
+1. fastspeech2 模型：
+
 ```shell
-python tools/normalize.py \
+python train/exps/fastspeech2/normalize.py \
     --metadata=dump/train/raw/metadata.jsonl \
     --dumpdir=dump/train/norm \
     --speech-stats=dump/train/speech_stats.npy \
@@ -190,7 +208,7 @@ python tools/normalize.py \
     --phones-dict=dump/phone_id_map.txt \
     --speaker-dict=dump/speaker_id_map.txt
 
-python tools/normalize.py \
+python train/exps/fastspeech2/normalize.py \
     --metadata=dump/dev/raw/metadata.jsonl \
     --dumpdir=dump/dev/norm \
     --speech-stats=dump/train/speech_stats.npy \
@@ -199,7 +217,7 @@ python tools/normalize.py \
     --phones-dict=dump/phone_id_map.txt \
     --speaker-dict=dump/speaker_id_map.txt
 
-python tools/normalize.py \
+python train/exps/fastspeech2/normalize.py \
     --metadata=dump/test/raw/metadata.jsonl \
     --dumpdir=dump/test/norm \
     --speech-stats=dump/train/speech_stats.npy \
@@ -209,17 +227,59 @@ python tools/normalize.py \
     --speaker-dict=dump/speaker_id_map.txt
 ```
 
+2. speedyspeech 模型：
+
+python train/exps/speedyspeech/normalize.py \
+    --metadata=dump/train/raw/metadata.jsonl \
+    --dumpdir=dump/train/norm \
+    --stats=dump/train/feats_stats.npy \
+    --phones-dict=dump/phone_id_map.txt \
+    --tones-dict=dump/tone_id_map.txt \
+    --use-relative-path=True
+
+python train/exps/speedyspeech/normalize.py \
+    --metadata=dump/dev/raw/metadata.jsonl \
+    --dumpdir=dump/dev/norm \
+    --stats=dump/train/feats_stats.npy \
+    --phones-dict=dump/phone_id_map.txt \
+    --tones-dict=dump/tone_id_map.txt \
+    --use-relative-path=True
+
+python train/exps/speedyspeech/normalize.py \
+    --metadata=dump/test/raw/metadata.jsonl \
+    --dumpdir=dump/test/norm \
+    --stats=dump/train/feats_stats.npy \
+    --phones-dict=dump/phone_id_map.txt \
+    --tones-dict=dump/tone_id_map.txt \
+    --use-relative-path=True
+
 ## 3. 训练
 
+1. fastspeech2 模型（多人）：
+
 ```shell
-python train/train.py \
+python train/exps/fastspeech2/train.py \
     --train-metadata=dump/train/norm/metadata.jsonl \
     --dev-metadata=dump/dev/norm/metadata.jsonl \
-    --config=train/conf/default_multi.yaml \
+    --config=train/conf/fastspeech2/default_multi.yaml \
     --output-dir=exp/fastspeech2_bili3_aishell3 \
     --ngpu=1 \
     --phones-dict=dump/phone_id_map.txt \
     --speaker-dict=dump/speaker_id_map.txt
+```
+
+2. speedyspeech模型：
+
+```shell
+python train/exps/speedyspeech/train.py \
+    --train-metadata=dump/train/norm/metadata.jsonl \
+    --dev-metadata=dump/dev/norm/metadata.jsonl \
+    --config=train/conf/speedyspeech/default.yaml \
+    --output-dir=exp/speedyspeech_bili3_aishell3 \
+    --ngpu=1 \
+    --phones-dict=dump/phone_id_map.txt \
+    --tones-dict=dump/tone_id_map.txt \
+    --use-relative-path=True
 ```
 
 ## 4. 推理
@@ -255,7 +315,7 @@ python train/synthesize_e2e.py \
 ```shell
 python train/synthesize_e2e.py \
         --am=fastspeech2_csmsc \
-        --am_config=train/conf/default_single.yaml \
+        --am_config=train/conf/fastspeech2/default_single.yaml \
         --am_ckpt=exp/fastspeech2_ghost/checkpoints/snapshot_iter_<iter num>.pdz \
         --am_stat=dump/train/speech_stats.npy \
         --voc=hifigan_csmsc \
@@ -268,6 +328,26 @@ python train/synthesize_e2e.py \
         --inference_dir=train/inference \
         --phones_dict=dump/phone_id_map.txt \
         --ngpu=1
+```
+
+### 3. speedyspeech + pwg
+
+```shell
+python train/synthesize_e2e.py \
+        --am=speedyspeech_csmsc \
+        --am_config=train/conf/speedyspeech/default.yaml \
+        --am_ckpt=exp/speedyspeech_bili3_aishell3/checkpoints/snapshot_iter_<iter num>.pdz \
+        --am_stat=dump/train/feats_stats.npy \
+        --voc=pwgan_csmsc \
+        --voc_config=pwg_baker_ckpt_0.4/pwg_default.yaml \
+        --voc_ckpt=pwg_baker_ckpt_0.4/pwg_snapshot_iter_400000.pdz \
+        --voc_stat=pwg_baker_ckpt_0.4/pwg_stats.npy \
+        --lang=zh \
+        --text=sentences.txt \
+        --output_dir=train/test_e2e \
+        --inference_dir=train/inference \
+        --phones_dict=dump/phone_id_map.txt \
+        --tones_dict=dump/tone_id_map.txt
 ```
 
 ## 5. GUI界面 (WIP)
@@ -285,3 +365,11 @@ pip install sounddevice
 cd gui/
 python main2.py
 ```
+
+## 6. TODO list
+
+* 优化ASR流程，目前batch size = 1，速度慢。
+* 新建一个run_preprocess.sh，一键预处理。
+* spleeter降噪。
+* 加入GST合成不同的风格。
+* preprocess优化，不需要重复处理数据集。
