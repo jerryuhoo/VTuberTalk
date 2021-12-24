@@ -26,7 +26,7 @@ pip install paddlepaddle paddlespeech
 
 目录结构：
 
-```
+```text
 ├── train
 ├── gui
 ├── tools
@@ -140,18 +140,29 @@ mfa align <data/wav/speaker_name/split> MFA/mandarin_pinyin.dict MFA/mandarin.zi
 
 ### 2.9. 生成其他预处理文件
 
-生成duration
+#### 生成duration
+
+##### 1. fastspeech2 模型（多人）
 
 ```shell
 python tools/gen_duration_from_textgrid.py \
     --inputdir=data/TextGrid \
     --output=data/durations.txt \
-    --config=train/conf/default_multi.yaml
+    --config=train/conf/fastspeech2/default_multi.yaml
 ```
 
-提取features
+##### 2. speedyspeech 模型
 
-1. fastspeech2 模型（多人）：
+```shell
+python tools/gen_duration_from_textgrid.py \
+    --inputdir=data/TextGrid \
+    --output=data/durations.txt \
+    --config=train/conf/speedyspeech/default.yaml
+```
+
+#### 提取features
+
+##### 1. fastspeech2 模型（多人）
 
 ```shell
 python train/exps/fastspeech2/preprocess.py \
@@ -164,7 +175,7 @@ python train/exps/fastspeech2/preprocess.py \
     --cut-sil=True
 ```
 
-2. speedyspeech 模型：
+##### 2. speedyspeech 模型
 
 ```shell
 python train/exps/speedyspeech/preprocess.py \
@@ -178,7 +189,9 @@ python train/exps/speedyspeech/preprocess.py \
     --use-relative-path=True
 ```
 
-compute_statistics
+#### compute_statistics
+
+##### 1. fastspeech2 模型
 
 ```shell
 python tools/compute_statistics.py \
@@ -194,9 +207,18 @@ python tools/compute_statistics.py \
     --field-name="energy"
 ```
 
-normalize
+##### 2. speedyspeech 模型
 
-1. fastspeech2 模型：
+```shell
+python tools/compute_statistics.py \
+    --metadata=dump/train/raw/metadata.jsonl \
+    --field-name="feats" \
+    --use-relative-path=True
+```
+
+#### normalize
+
+##### 1. fastspeech2 模型
 
 ```shell
 python train/exps/fastspeech2/normalize.py \
@@ -227,8 +249,9 @@ python train/exps/fastspeech2/normalize.py \
     --speaker-dict=dump/speaker_id_map.txt
 ```
 
-2. speedyspeech 模型：
+##### 2. speedyspeech 模型
 
+```shell
 python train/exps/speedyspeech/normalize.py \
     --metadata=dump/train/raw/metadata.jsonl \
     --dumpdir=dump/train/norm \
@@ -252,10 +275,11 @@ python train/exps/speedyspeech/normalize.py \
     --phones-dict=dump/phone_id_map.txt \
     --tones-dict=dump/tone_id_map.txt \
     --use-relative-path=True
+```
 
 ## 3. 训练
 
-1. fastspeech2 模型（多人）：
+### 1. fastspeech2 模型（多人）
 
 ```shell
 python train/exps/fastspeech2/train.py \
@@ -268,7 +292,7 @@ python train/exps/fastspeech2/train.py \
     --speaker-dict=dump/speaker_id_map.txt
 ```
 
-2. speedyspeech模型：
+### 2. speedyspeech模型
 
 ```shell
 python train/exps/speedyspeech/train.py \
