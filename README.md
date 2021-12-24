@@ -134,6 +134,13 @@ conda install montreal-forced-aligner
 mfa align <data/wav/speaker_name/split> MFA/mandarin_pinyin.dict MFA/mandarin.zip <data/TextGrid/speaker_name>
 ```
 
+自己训练一个，详见[MFA训练教程](https://montreal-forced-aligner.readthedocs.io/en/latest/first_steps/index.html#first-steps-align-train-acoustic-model)
+
+```shell
+python tools/generate_lexicon.py pinyin.dict --with-r --with-tone
+mfa train <corpus/> pinyin.dict mandarin.zip <alignment/>
+```
+
 > 如果再使用需要加`--clean`
 
 > 如果要生成MFA1.x版本（包含sp和sil信息）需要加`--disable_textgrid_cleanup True`
