@@ -137,7 +137,7 @@ mfa align <data/wav/speaker_name/split> MFA/mandarin_pinyin.dict MFA/mandarin.zi
 自己训练一个，详见[MFA训练教程](https://montreal-forced-aligner.readthedocs.io/en/latest/first_steps/index.html#first-steps-align-train-acoustic-model)
 
 ```shell
-python tools/generate_lexicon.py pinyin.dict --with-r --with-tone
+python tools/generate_lexicon.py pinyin --with-r --with-tone
 mfa train <corpus/> pinyin.dict mandarin.zip <alignment/>
 ```
 

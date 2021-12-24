@@ -187,7 +187,7 @@ if __name__ == "__main__":
     lexicon = generate_lexicon(args.with_tone, args.with_r)
     symbols = generate_symbols(lexicon)
 
-    with open(args.output + ".lexicon", 'wt') as f:
+    with open(args.output + ".dict", 'wt') as f:
         for k, v in lexicon.items():
             f.write(f"{k} {v}\n")
 
