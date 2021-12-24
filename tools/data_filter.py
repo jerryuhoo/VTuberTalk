@@ -17,7 +17,7 @@ def process(args, outdir):
     path=args.path
     files=os.listdir(path)
     files = sorted_alphanumeric(files)
-    count = [0] * 100
+    count = [0] * 200
     for file in files:
         if file.endswith('.txt'):
             pass
@@ -31,7 +31,7 @@ def process(args, outdir):
                 if line_len < args.min or line_len > args.max:
                     move(path, file, outdir)
 
-    for i in range(100):
+    for i in range(len(count)):
         print("长度为", i, "的有", count[i], "条。")
 
 if __name__ == '__main__':
