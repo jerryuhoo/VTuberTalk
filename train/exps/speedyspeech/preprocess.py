@@ -31,7 +31,7 @@ from yacs.config import CfgNode
 
 from paddlespeech.t2s.data.get_feats import LogMelFBank
 
-sys.path.append("..")
+sys.path.append("train/exps")
 from preprocess_utils import compare_duration_and_mel_length
 from preprocess_utils import get_phn_dur
 from preprocess_utils import get_phones_tones

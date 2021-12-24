@@ -25,16 +25,19 @@ import librosa
 import numpy as np
 import tqdm
 import yaml
+import sys
 from yacs.config import CfgNode
 
 from paddlespeech.t2s.data.get_feats import Energy
 from paddlespeech.t2s.data.get_feats import LogMelFBank
 from paddlespeech.t2s.data.get_feats import Pitch
-from paddlespeech.t2s.datasets.preprocess_utils import compare_duration_and_mel_length
-from paddlespeech.t2s.datasets.preprocess_utils import get_input_token
-from paddlespeech.t2s.datasets.preprocess_utils import get_phn_dur
-from paddlespeech.t2s.datasets.preprocess_utils import get_spk_id_map
-from paddlespeech.t2s.datasets.preprocess_utils import merge_silence
+
+sys.path.append("train/exps")
+from preprocess_utils import compare_duration_and_mel_length
+from preprocess_utils import get_input_token
+from preprocess_utils import get_phn_dur
+from preprocess_utils import get_spk_id_map
+from preprocess_utils import merge_silence
 
 
 def process_sentence(config: Dict[str, Any],
