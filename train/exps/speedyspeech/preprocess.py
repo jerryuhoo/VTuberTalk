@@ -14,6 +14,7 @@
 import argparse
 import re
 import os
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from operator import itemgetter
 from pathlib import Path
@@ -29,10 +30,12 @@ import yaml
 from yacs.config import CfgNode
 
 from paddlespeech.t2s.data.get_feats import LogMelFBank
-from paddlespeech.t2s.datasets.preprocess_utils import compare_duration_and_mel_length
-from paddlespeech.t2s.datasets.preprocess_utils import get_phn_dur
-from paddlespeech.t2s.datasets.preprocess_utils import get_phones_tones
-from paddlespeech.t2s.datasets.preprocess_utils import merge_silence
+
+sys.path.append("..")
+from preprocess_utils import compare_duration_and_mel_length
+from preprocess_utils import get_phn_dur
+from preprocess_utils import get_phones_tones
+from preprocess_utils import merge_silence
 
 
 def process_sentence(config: Dict[str, Any],
