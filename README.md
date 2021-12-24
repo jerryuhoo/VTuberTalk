@@ -80,13 +80,13 @@ python tools/video_to_wav.py --path <data to folder or file>
 音频分割使用了webrtcvad模块，其中第一个参数aggressiveness是分割检测的敏感度，数字越大，对于静音检测越敏感，分割的音频个数也越多。范围为0～3。
 
 ```shell
-python tools/split_audio.py --ag <aggressiveness> --in_path <path to wav folder or file>
+python tools/split_audio.py --ag <aggressiveness> --in_path <data/wav/speaker_name/raw>
 ```
 
 ### 2.3. 使用ASR获得文本
 
 ```shell
-python gen_text.py --path <data> --lang <language: 'en' or 'zh'>
+python gen_text.py --path <data/wav/speaker_name/split> --lang <language: 'en' or 'zh'>
 ```
 
 ### 2.4. 使用字幕获得文本
@@ -97,13 +97,19 @@ python gen_text.py --path <data> --lang <language: 'en' or 'zh'>
 python tools/split_audio_by_srt.py --path <data>
 ```
 
-### 2.5. 汉字转拼音
+### 2.5. 去除过长过短文本
 
 ```shell
-python tools/hanzi_to_pinyin.py --path <data>
+python tools/data_filter.py --path <data/wav/speaker_name/split>
 ```
 
-### 2.6. Spleeter降噪
+### 2.6. 汉字转拼音
+
+```shell
+python tools/hanzi_to_pinyin.py --path <data/wav/speaker_name/split>
+```
+
+### 2.7. Spleeter降噪
 
 WIP
 
@@ -111,7 +117,7 @@ WIP
 pip install spleeter
 ```
 
-### 2.7. MFA音素对齐
+### 2.8. MFA音素对齐
 
 本项目使用了百度PaddleSpeech的fastspeech2模块作为tts声学模型。
 
@@ -125,14 +131,14 @@ conda install montreal-forced-aligner
 下载[mandarin](https://montreal-forced-aligner.readthedocs.io/en/latest/user_guide/models/acoustic.html)模型，放入MFA文件夹中。
 
 ```shell
-mfa align data/wav/speaker_name/split MFA/mandarin_pinyin.dict MFA/mandarin.zip data/TextGrid/speaker_name
+mfa align <data/wav/speaker_name/split> MFA/mandarin_pinyin.dict MFA/mandarin.zip <data/TextGrid/speaker_name>
 ```
 
 > 如果再使用需要加`--clean`
 
 > 如果要生成MFA1.x版本（包含sp和sil信息）需要加`--disable_textgrid_cleanup True`
 
-### 2.8. 生成其他预处理文件
+### 2.9. 生成其他预处理文件
 
 生成duration
 
