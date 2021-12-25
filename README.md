@@ -128,17 +128,17 @@ conda config --add channels conda-forge
 conda install montreal-forced-aligner
 ```
 
-下载[mandarin](https://montreal-forced-aligner.readthedocs.io/en/latest/user_guide/models/acoustic.html)模型，放入MFA文件夹中。
-
-```shell
-mfa align <data/wav/speaker_name/split> MFA/mandarin_pinyin.dict MFA/mandarin.zip <data/TextGrid/speaker_name>
-```
+下载[mandarin]模型(WIP)，放入MFA文件夹中。
 
 自己训练一个，详见[MFA训练教程](https://montreal-forced-aligner.readthedocs.io/en/latest/first_steps/index.html#first-steps-align-train-acoustic-model)
 
 ```shell
 python tools/generate_lexicon.py pinyin --with-r --with-tone
-mfa train <corpus/> pinyin.dict mandarin.zip <alignment/>
+mfa train <corpus/> MFA/pinyin.dict MFA/mandarin.zip <alignment/>
+```
+
+```shell
+mfa align <data/wav/speaker_name/split> MFA/pinyin.dict MFA/mandarin.zip <data/TextGrid/speaker_name>
 ```
 
 > 如果再使用需要加`--clean`
