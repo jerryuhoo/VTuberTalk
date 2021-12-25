@@ -327,7 +327,7 @@ python train/exps/speedyspeech/train.py \
 ```shell
 python train/synthesize_e2e.py \
         --am=fastspeech2_aishell3 \
-        --am_config=train/conf/default_multi.yaml \
+        --am_config=train/conf/fastspeech2/default_multi.yaml \
         --am_ckpt=exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_<iter num>.pdz \
         --am_stat=dump/train/speech_stats.npy \
         --voc=pwgan_aishell3 \
@@ -341,7 +341,7 @@ python train/synthesize_e2e.py \
         --phones_dict=dump/phone_id_map.txt \
         --speaker_dict=dump/speaker_id_map.txt \
         --ngpu=1 \
-        --spk_id=218
+        --spk_id=174
 ```
 
 ### 2. fastspeech + hifigan + single

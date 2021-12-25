@@ -157,16 +157,16 @@ class App(QMainWindow):
             self.phones_dict = "../exp/fastspeech2_bili3_aishell3/phone_id_map.txt"
             self.tones_dict = None
             self.speaker_dict = "../exp/fastspeech2_bili3_aishell3/speaker_id_map.txt"
-            self.am_ckpt = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_43015.pdz"
+            self.am_ckpt = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_13830.pdz"
             self.am_stat = "../exp/fastspeech2_bili3_aishell3/speech_stats.npy"
-            with open("../exp/fastspeech2_bili3_aishell3/default.yaml") as f:
+            with open("../exp/fastspeech2_bili3_aishell3/default_multi.yaml") as f:
                 self.am_config = CfgNode(yaml.safe_load(f))
-            self.spk_id = 218
+            self.spk_id = 174
 
         self.voc = "pwgan_csmsc"
-        self.voc_config = "../pwg_baker_ckpt_0.4/pwg_default.yaml"
-        self.voc_ckpt = "../pwg_baker_ckpt_0.4/pwg_snapshot_iter_400000.pdz"
-        self.voc_stat = "../pwg_baker_ckpt_0.4/pwg_stats.npy"
+        self.voc_config = "../pretrained_models/pwg_aishell3_ckpt_0.5/default.yaml"
+        self.voc_ckpt = "../pretrained_models/pwg_aishell3_ckpt_0.5/snapshot_iter_1000000.pdz" 
+        self.voc_stat = "../pretrained_models/pwg_aishell3_ckpt_0.5/feats_stats.npy"
         self.output_dir = "./"
         with open("../pwg_baker_ckpt_0.4/pwg_default.yaml") as f:
             self.voc_config = CfgNode(yaml.safe_load(f))
@@ -314,11 +314,11 @@ class App(QMainWindow):
         # self.qlabel.setText(text)
         # self.qlabel.adjustSize()
         if text == "阿梓":
-            self.spk_id = 218
+            self.spk_id = 174
         elif text == "老菊":
-            self.spk_id = 219
+            self.spk_id = 175
         elif text == "海子姐":
-            self.spk_id = 220
+            self.spk_id = 176
 
     def onTTSModelComboboxChanged(self, text):
         if text == "fastspeech2":

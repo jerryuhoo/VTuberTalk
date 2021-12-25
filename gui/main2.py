@@ -19,7 +19,7 @@ from paddlespeech.t2s.frontend.zh_frontend import Frontend
 from paddlespeech.t2s.models.fastspeech2 import FastSpeech2
 # from paddlespeech.t2s.models.fastspeech2 import StyleFastSpeech2Inference
 sys.path.append("..") 
-from train.model.fastspeech2 import StyleFastSpeech2Inference
+from train.models.fastspeech2 import StyleFastSpeech2Inference
 from paddlespeech.t2s.models.parallel_wavegan import PWGGenerator
 from paddlespeech.t2s.models.parallel_wavegan import PWGInference
 from paddlespeech.t2s.modules.normalizer import ZScore
@@ -124,20 +124,20 @@ class App(QMainWindow):
         # settings
         # parse args and config and redirect to train_sp
         
-        self.fastspeech2_config_path = "../exp/fastspeech2_bili3_aishell3/default.yaml"
-        self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_43015.pdz"
+        self.fastspeech2_config_path = "../exp/fastspeech2_bili3_aishell3/default_multi.yaml"
+        self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_13830.pdz"
         self.fastspeech2_stat = "../exp/fastspeech2_bili3_aishell3/speech_stats.npy"
         self.fastspeech2_pitch_stat = "../exp/fastspeech2_bili3_aishell3/pitch_stats.npy"
         self.fastspeech2_energy_stat = "../exp/fastspeech2_bili3_aishell3/energy_stats.npy"
-        self.pwg_config_path = "../pwg_baker_ckpt_0.4/pwg_default.yaml"
-        self.pwg_checkpoint = "../pwg_baker_ckpt_0.4/pwg_snapshot_iter_400000.pdz" 
-        self.pwg_stat = "../pwg_baker_ckpt_0.4/pwg_stats.npy"
+        self.pwg_config_path = "../pretrained_models/pwg_aishell3_ckpt_0.5/default.yaml"
+        self.pwg_checkpoint = "../pretrained_models/pwg_aishell3_ckpt_0.5/snapshot_iter_1000000.pdz" 
+        self.pwg_stat = "../pretrained_models/pwg_aishell3_ckpt_0.5/feats_stats.npy"
         self.phones_dict = "../exp/fastspeech2_bili3_aishell3/phone_id_map.txt"
         self.ngpu = 0
         self.style = "Normal"
         self.speed = "1.0xspeed"
         self.speaker_dict="../exp/fastspeech2_bili3_aishell3/speaker_id_map.txt"
-        self.spk_id = 218
+        self.spk_id = 174
         self.wav = None
 
 
@@ -309,11 +309,11 @@ class App(QMainWindow):
 
     def onVoiceComboboxChanged(self, text):
         if text == "阿梓":
-            self.spk_id = 218
+            self.spk_id = 174
         elif text == "老菊":
-            self.spk_id = 219
+            self.spk_id = 175
         elif text == "海子姐":
-            self.spk_id = 220
+            self.spk_id = 176
 
     def onTTSStyleComboboxChanged(self, text):
         if text == "正常":
