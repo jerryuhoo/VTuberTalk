@@ -30,8 +30,11 @@ pip install paddlepaddle paddlespeech
 ├── train
 ├── gui
 ├── tools
+├── pretrained_models
+│   ├── pwg_aishell3_ckpt_0.5
+│   └── hifigan_csmsc_ckpt_0.1.1
 ├── MFA
-│   ├── mandarin_pinyin.dict
+│   ├── pinyin.dict
 │   └── mandarin.zip
 └── data
     ├── wav
@@ -127,8 +130,6 @@ pip install spleeter
 conda config --add channels conda-forge
 conda install montreal-forced-aligner
 ```
-
-下载[mandarin]模型(WIP)，放入MFA文件夹中。
 
 自己训练一个，详见[MFA训练教程](https://montreal-forced-aligner.readthedocs.io/en/latest/first_steps/index.html#first-steps-align-train-acoustic-model)
 
@@ -315,9 +316,11 @@ python train/exps/speedyspeech/train.py \
 
 ## 4. 推理
 
-下载[pwg_baker_ckpt_0.4.zip](https://paddlespeech.bj.bcebos.com/Parakeet/released_models/pwgan/pwg_baker_ckpt_0.4.zip)。
+下载[pwg_aishell3_ckpt_0.5](https://paddlespeech.bj.bcebos.com/Parakeet/released_models/pwgan/pwg_aishell3_ckpt_0.5.zip)。
 
 下载[hifigan_csmsc_ckpt_0.1.1.zip](https://paddlespeech.bj.bcebos.com/Parakeet/released_models/hifigan/hifigan_csmsc_ckpt_0.1.1.zip)。
+
+把下载的vocoder模型放在pretrained_models目录中
 
 ### 1. fastspeech + pwg + multiple
 
@@ -327,10 +330,10 @@ python train/synthesize_e2e.py \
         --am_config=train/conf/default_multi.yaml \
         --am_ckpt=exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_<iter num>.pdz \
         --am_stat=dump/train/speech_stats.npy \
-        --voc=pwgan_csmsc \
-        --voc_config=pwg_baker_ckpt_0.4/pwg_default.yaml \
-        --voc_ckpt=pwg_baker_ckpt_0.4/pwg_snapshot_iter_400000.pdz \
-        --voc_stat=pwg_baker_ckpt_0.4/pwg_stats.npy \
+        --voc=pwgan_aishell3 \
+        --voc_config=pretrained_models/pwg_aishell3_ckpt_0.5/default.yaml \
+        --voc_ckpt=pretrained_models/pwg_aishell3_ckpt_0.5/snapshot_iter_1000000.pdz \
+        --voc_stat=pretrained_models/pwg_aishell3_ckpt_0.5/feats_stats.npy \
         --lang=zh \
         --text=sentences.txt \
         --output_dir=train/test_e2e \
@@ -350,9 +353,9 @@ python train/synthesize_e2e.py \
         --am_ckpt=exp/fastspeech2_ghost/checkpoints/snapshot_iter_<iter num>.pdz \
         --am_stat=dump/train/speech_stats.npy \
         --voc=hifigan_csmsc \
-        --voc_config=hifigan_csmsc_ckpt_0.1.1/default.yaml \
-        --voc_ckpt=hifigan_csmsc_ckpt_0.1.1/snapshot_iter_2500000.pdz \
-        --voc_stat=hifigan_csmsc_ckpt_0.1.1/feats_stats.npy \
+        --voc_config=pretrained_models/hifigan_csmsc_ckpt_0.1.1/default.yaml \
+        --voc_ckpt=pretrained_models/hifigan_csmsc_ckpt_0.1.1/snapshot_iter_2500000.pdz \
+        --voc_stat=pretrained_models/hifigan_csmsc_ckpt_0.1.1/feats_stats.npy \
         --lang=zh \
         --text=sentences.txt \
         --output_dir=train/test_e2e \
@@ -370,9 +373,9 @@ python train/synthesize_e2e.py \
         --am_ckpt=exp/speedyspeech_bili3_aishell3/checkpoints/snapshot_iter_<iter num>.pdz \
         --am_stat=dump/train/feats_stats.npy \
         --voc=pwgan_csmsc \
-        --voc_config=pwg_baker_ckpt_0.4/pwg_default.yaml \
-        --voc_ckpt=pwg_baker_ckpt_0.4/pwg_snapshot_iter_400000.pdz \
-        --voc_stat=pwg_baker_ckpt_0.4/pwg_stats.npy \
+        --voc_config=pretrained_models/pwg_baker_ckpt_0.4/pwg_default.yaml \
+        --voc_ckpt=pretrained_models/pwg_baker_ckpt_0.4/pwg_snapshot_iter_400000.pdz \
+        --voc_stat=pretrained_models/pwg_baker_ckpt_0.4/pwg_stats.npy \
         --lang=zh \
         --text=sentences.txt \
         --output_dir=train/test_e2e \
