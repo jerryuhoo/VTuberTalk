@@ -54,7 +54,7 @@ pip install paddlepaddle paddlespeech
     └── durations.txt
 ```
 
-## 2. 预处理
+## 2. 数据准备
 
 ### 2.1. 从直播录像中获取音频
 
@@ -106,13 +106,27 @@ python tools/split_audio_by_srt.py --path <data>
 python tools/data_filter.py --path <data/wav/speaker_name/split>
 ```
 
-### 2.6. 汉字转拼音
+### 2.6. 文本纠正
+
+收集所有的文本到一个txt文件中。
+
+```shell
+python tools/glob_text.py --path <data/wav/speaker_name/split>
+```
+
+打开txt文件，修改错字后再运行
+
+```shell
+python tools/revise_text.py --path <data/wav/speaker_name/split>
+```
+
+### 2.7. 汉字转拼音
 
 ```shell
 python tools/hanzi_to_pinyin.py --path <data/wav/speaker_name/split>
 ```
 
-### 2.7. Spleeter降噪
+### 2.8. Spleeter降噪
 
 WIP
 
@@ -120,7 +134,7 @@ WIP
 pip install spleeter
 ```
 
-### 2.8. MFA音素对齐
+### 2.9. MFA音素对齐
 
 本项目使用了百度PaddleSpeech的fastspeech2模块作为tts声学模型。
 
@@ -146,7 +160,7 @@ mfa align <data/wav/speaker_name/split> MFA/pinyin.dict MFA/mandarin.zip <data/T
 
 > 如果要生成MFA1.x版本（包含sp和sil信息）需要加`--disable_textgrid_cleanup True`
 
-### 2.9. 生成其他预处理文件
+### 2.10. 生成其他预处理文件
 
 #### 生成duration
 
