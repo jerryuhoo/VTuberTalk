@@ -386,6 +386,8 @@ python train/synthesize_e2e.py \
 
 ## 5. GUI界面 (WIP)
 
+![Alt text](gui/gui.png?raw=true "Title")
+
 安装依赖库：
 
 ```shell

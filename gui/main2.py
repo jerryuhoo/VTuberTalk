@@ -84,8 +84,8 @@ class App(QMainWindow):
         self.tts_style_combo = QComboBox(self)
         self.tts_style_combo.addItem("正常")
         self.tts_style_combo.addItem("机器楞")
-        self.tts_style_combo.addItem("芜湖起飞")
-        self.tts_style_combo.addItem("玉玉了")
+        self.tts_style_combo.addItem("高音")
+        self.tts_style_combo.addItem("低音")
 
         self.tts_style_combo.move(240, 120)
         self.tts_style_combo.resize(120, 40)
@@ -125,7 +125,7 @@ class App(QMainWindow):
         # parse args and config and redirect to train_sp
         
         self.fastspeech2_config_path = "../exp/fastspeech2_bili3_aishell3/default_multi.yaml"
-        self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_13830.pdz"
+        self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_179790.pdz"
         self.fastspeech2_stat = "../exp/fastspeech2_bili3_aishell3/speech_stats.npy"
         self.fastspeech2_pitch_stat = "../exp/fastspeech2_bili3_aishell3/pitch_stats.npy"
         self.fastspeech2_energy_stat = "../exp/fastspeech2_bili3_aishell3/energy_stats.npy"
@@ -238,9 +238,9 @@ class App(QMainWindow):
 
         if self.tts_style_combo.currentText == "机器楞":
             self.style = "robot"
-        elif self.tts_style_combo.currentText == "芜湖起飞":
+        elif self.tts_style_combo.currentText == "高音":
             self.style = "high_voice"
-        elif self.tts_style_combo.currentText == "玉玉了":
+        elif self.tts_style_combo.currentText == "低音":
             self.style = "low_voice"
 
         if self.tts_speed_combo.currentText == "1.2x":
@@ -256,14 +256,18 @@ class App(QMainWindow):
             robot = True
         if self.speed == "1.2xspeed":
             durations_scale = 1 / 1.2
-        if self.speed == "0.8xspeed":
+        elif self.speed == "1.0xspeed":
+            durations_scale = 1
+        elif self.speed == "0.8xspeed":
             durations_scale = 1 / 0.8
-        if self.speed == "3.0xspeed":
+        elif self.speed == "3.0xspeed":
             durations_scale = 1 / 3.0
         if self.style == "high_voice":
             pitch_scale = 1.3
-        if self.style == "low_voice":
+        elif self.style == "low_voice":
             pitch_scale = 0.7
+        elif self.style == "normal":
+            pitch_scale = 1                         
         
         for utt_id, sentence in sentences:
             input_ids = self.frontend.get_input_ids(
@@ -317,17 +321,17 @@ class App(QMainWindow):
 
     def onTTSStyleComboboxChanged(self, text):
         if text == "正常":
-            pass
+            self.style = "normal"
         elif text == "机器楞":
             self.style = "robot"
-        elif text == "芜湖起飞":
+        elif text == "高音":
             self.style = "high_voice"
-        elif text == "玉玉了":
+        elif text == "低音":
             self.style = "low_voice"
         
     def onTTSSpeedComboboxChanged(self, text):
         if text == "1.0x":
-            pass
+            self.speed = "1.0xspeed"
         elif text == "1.2x":
             self.speed = "1.2xspeed"
         elif text == "0.8x":
