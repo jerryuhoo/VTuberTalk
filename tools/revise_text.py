@@ -2,6 +2,13 @@ import os
 import re
 import argparse
 
+def move(root_path, file_name, output_path):
+    os.replace(os.path.join(root_path, file_name), os.path.join(output_path, file_name))
+    wav_file = os.path.splitext(file_name)[0] + '.wav'
+    lab_file = os.path.splitext(file_name)[0] + '.lab'
+    os.replace(os.path.join(root_path, wav_file), os.path.join(output_path, wav_file))
+    os.replace(os.path.join(root_path, lab_file), os.path.join(output_path, lab_file))
+
 def process(files, path):
     text_dict = {}
     with open("./text.txt" ,'r') as text_file:
@@ -20,6 +27,11 @@ def process(files, path):
             if file in text_dict.keys():
                 revised_text = text_dict[file]
             else:
+                outdir = os.path.join(path, "../unrecognized")
+                if not os.path.exists(outdir):
+                    os.mkdir(outdir)
+                move(path, file, outdir)
+                print("move " + file + " to unrecognized.")
                 continue
 
             if revised_text != ori_text:
