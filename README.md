@@ -301,7 +301,7 @@ python train/exps/speedyspeech/normalize.py \
 
 ## 3. 训练
 
-### 1. fastspeech2 模型（多人）
+### 3.1. fastspeech2 模型（多人）
 
 ```shell
 python train/exps/fastspeech2/train.py \
@@ -314,7 +314,7 @@ python train/exps/fastspeech2/train.py \
     --speaker-dict=dump/speaker_id_map.txt
 ```
 
-### 2. speedyspeech模型
+### 3.2. speedyspeech模型
 
 ```shell
 python train/exps/speedyspeech/train.py \
@@ -326,6 +326,12 @@ python train/exps/speedyspeech/train.py \
     --phones-dict=dump/phone_id_map.txt \
     --tones-dict=dump/tone_id_map.txt \
     --use-relative-path=True
+```
+
+### 3.3. 查看Loss图
+
+```shell
+visualdl --logdir <log folder path>
 ```
 
 ## 4. 推理
