@@ -14,7 +14,7 @@ def process(files, path):
     with open("./text.txt" ,'r') as text_file:
         for line in text_file.readlines():
             line = line[:-1]
-            file_name, text = line.split()[0], line.split()[1]
+            file_name, text = line.split()[0], re.search(r'[".txt "].*',line).group()[5:]
             text_dict[file_name] = text
     for file in files:
         if not file.endswith('.txt'):
