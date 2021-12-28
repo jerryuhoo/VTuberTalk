@@ -134,7 +134,7 @@ class App(QMainWindow):
         self.ref_audio_label.move(20, 240)
         self.ref_audio_label.resize(380, 40)
         self.ref_audio_label.setText("未加载参考音频")
-        self.ref_audio_path = "ref.wav"
+        self.ref_audio_path = ""
         self.show()
 
     def initModel(self, tts_model=None):
@@ -216,7 +216,14 @@ class App(QMainWindow):
 
     @pyqtSlot()
     def onGenerateButtonClicked(self):
+        if self.ref_audio_path == "":
+            self.messageDialog("请先选择参考音频！")
+            return
+
         textboxValue = self.textbox.text()
+        if textboxValue == "":
+            self.messageDialog("输入不能为空！")
+            return
 
         sentences = []
         sentences.append(("001", textboxValue))
@@ -319,7 +326,11 @@ class App(QMainWindow):
         for utt_id, sentence in sentences:
             input_ids = self.frontend.get_input_ids(
                 sentence, merge_sentences=True, robot=robot)
-            phone_ids = input_ids["phone_ids"][0]
+            try:
+                phone_ids = input_ids["phone_ids"][0]
+            except:
+                self.messageDialog("输入的文字不能识别，请重新输入！")
+                return
             print("self.spk_id", self.spk_id)
             with paddle.no_grad():
                 mel = fastspeech2_inference(
@@ -412,6 +423,9 @@ class App(QMainWindow):
             pass
 
     def playAudioFile(self):
+        if type(self.wav) == type(None):
+            self.messageDialog("请先合成音频！")
+            return
         try:
             sd.stop()
             sd.play(self.wav, self.fastspeech2_config.fs)
