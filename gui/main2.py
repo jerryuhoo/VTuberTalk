@@ -150,7 +150,8 @@ class App(QMainWindow):
         # parse args and config and redirect to train_sp
         
         self.fastspeech2_config_path = "../exp/fastspeech2_bili3_aishell3/default_multi.yaml"
-        self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_62085.pdz"
+        self.fastspeech2_checkpoint_gst = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_99336.pdz"
+        self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_165560.pdz"
         self.fastspeech2_stat = "../exp/fastspeech2_bili3_aishell3/speech_stats.npy"
         self.fastspeech2_pitch_stat = "../exp/fastspeech2_bili3_aishell3/pitch_stats.npy"
         self.fastspeech2_energy_stat = "../exp/fastspeech2_bili3_aishell3/energy_stats.npy"
@@ -209,9 +210,13 @@ class App(QMainWindow):
         odim = self.fastspeech2_config.n_mels
         self.model = FastSpeech2(
             idim=vocab_size, odim=odim, **self.fastspeech2_config["model"], spk_num=self.spk_num, use_gst=self.use_gst)
+        if self.use_gst:
+            self.model.set_state_dict(
+                paddle.load(self.fastspeech2_checkpoint_gst)["main_params"])
+        else:
+            self.model.set_state_dict(
+                paddle.load(self.fastspeech2_checkpoint)["main_params"])
 
-        self.model.set_state_dict(
-            paddle.load(self.fastspeech2_checkpoint)["main_params"])
         self.model.eval()
         print("fastspeech2 model done!")
 
@@ -449,10 +454,8 @@ class App(QMainWindow):
 
     def onClickedGST(self):
         if self.use_gst_button.isChecked():
-            self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_62085.pdz"
             self.use_gst = True
         else:
-            self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_165560.pdz"
             self.use_gst = False
         self.loadAcousticModel()
 
