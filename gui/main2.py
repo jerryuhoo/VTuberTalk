@@ -54,17 +54,17 @@ class App(QMainWindow):
         self.textbox.resize(360, 40)
         
         # generate button
-        self.generate_button = QPushButton('generate', self)
+        self.generate_button = QPushButton('合成', self)
         self.generate_button.move(20, 80)
         self.generate_button.clicked.connect(self.onGenerateButtonClicked)
         
         # play button
-        self.play_button = QPushButton('replay', self)
+        self.play_button = QPushButton('重播', self)
         self.play_button.move(20, 120)
         self.play_button.clicked.connect(self.playAudioFile)
 
         # save button
-        self.save_button = QPushButton('save', self)
+        self.save_button = QPushButton('保存', self)
         self.save_button.move(20, 160)
         self.save_button.clicked.connect(self.saveWavFile)
 
@@ -123,8 +123,18 @@ class App(QMainWindow):
 
         self.voc_model_combo.move(240, 200)
         self.voc_model_combo.resize(120, 40)
-        self.voc_model_combo.activated[str].connect(self.onVocModelComboboxChanged)  
+        self.voc_model_combo.activated[str].connect(self.onVocModelComboboxChanged)
 
+        # ref audio
+        self.ref_audio_button = QPushButton('参考音频', self)
+        self.ref_audio_button.move(20, 200)
+        self.ref_audio_button.clicked.connect(self.loadRefWavFile)
+
+        self.ref_audio_label = QLabel(self)
+        self.ref_audio_label.move(20, 240)
+        self.ref_audio_label.resize(380, 40)
+        self.ref_audio_label.setText("未加载参考音频")
+        self.ref_audio_path = "ref.wav"
         self.show()
 
     def initModel(self, tts_model=None):
@@ -132,7 +142,7 @@ class App(QMainWindow):
         # parse args and config and redirect to train_sp
         
         self.fastspeech2_config_path = "../exp/fastspeech2_bili3_aishell3/default_multi.yaml"
-        self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_8278.pdz"
+        self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_165560.pdz"
         self.fastspeech2_stat = "../exp/fastspeech2_bili3_aishell3/speech_stats.npy"
         self.fastspeech2_pitch_stat = "../exp/fastspeech2_bili3_aishell3/pitch_stats.npy"
         self.fastspeech2_energy_stat = "../exp/fastspeech2_bili3_aishell3/energy_stats.npy"
@@ -144,9 +154,8 @@ class App(QMainWindow):
         self.style = "Normal"
         self.speed = "1.0xspeed"
         self.speaker_dict="../exp/fastspeech2_bili3_aishell3/speaker_id_map.txt"
-        self.spk_id = 174
+        self.spk_id = 175
         self.wav = None
-
 
         if self.ngpu == 0:
             paddle.set_device("cpu")
@@ -276,27 +285,29 @@ class App(QMainWindow):
         elif self.style == "normal":
             pitch_scale = 1                         
          
-        fp = "ref.wav"
         record = None
-        wav, _ = librosa.load(str(fp), sr=self.fastspeech2_config.fs)
-        if len(wav.shape) != 1 or np.abs(wav).max() > 1.0:
-            return record
-        assert len(wav.shape) == 1, f"ref audio is not a mono-channel audio."
-        assert np.abs(wav).max(
-        ) <= 1.0, f"ref audio is seems to be different that 16 bit PCM."
+        try:
+            wav, _ = librosa.load(str(self.ref_audio_path), sr=self.fastspeech2_config.fs)
+            if len(wav.shape) != 1 or np.abs(wav).max() > 1.0:
+                return record
+            assert len(wav.shape) == 1, f"ref audio is not a mono-channel audio."
+            assert np.abs(wav).max(
+            ) <= 1.0, f"ref audio is seems to be different that 16 bit PCM."
 
-        mel_extractor = LogMelFBank(
-            sr=self.fastspeech2_config.fs,
-            n_fft=self.fastspeech2_config.n_fft,
-            hop_length=self.fastspeech2_config.n_shift,
-            win_length=self.fastspeech2_config.win_length,
-            window=self.fastspeech2_config.window,
-            n_mels=self.fastspeech2_config.n_mels,
-            fmin=self.fastspeech2_config.fmin,
-            fmax=self.fastspeech2_config.fmax)
+            mel_extractor = LogMelFBank(
+                sr=self.fastspeech2_config.fs,
+                n_fft=self.fastspeech2_config.n_fft,
+                hop_length=self.fastspeech2_config.n_shift,
+                win_length=self.fastspeech2_config.win_length,
+                window=self.fastspeech2_config.window,
+                n_mels=self.fastspeech2_config.n_mels,
+                fmin=self.fastspeech2_config.fmin,
+                fmax=self.fastspeech2_config.fmax)
 
-        logmel = mel_extractor.get_log_mel_fbank(wav)
-        speech = paddle.to_tensor(logmel)
+            logmel = mel_extractor.get_log_mel_fbank(wav)
+            speech = paddle.to_tensor(logmel)
+        except:
+            speech = None
         
         for utt_id, sentence in sentences:
             input_ids = self.frontend.get_input_ids(
@@ -340,14 +351,32 @@ class App(QMainWindow):
                 sf.write(fpath, self.wav.numpy(), samplerate=self.fastspeech2_config.fs)
         else:
             self.messageDialog("还没有合成声音，无法保存！")
+    
+    def loadRefWavFile(self):
+        '''
+        setFileMode():
+        QFileDialog.AnyFile,任何文件
+        QFileDialog.ExistingFile,已存在的文件
+        QFileDialog.Directory,文件目录
+        QFileDialog.ExistingFiles,已经存在的多个文件
+        '''
+        dialog = QFileDialog()
+        dialog.setFileMode(QFileDialog.ExistingFile)
+        # dlg.setFilter(QDir.Files)
+
+        if dialog.exec_():
+            filenames= dialog.selectedFiles()
+            self.ref_audio_path = filenames[0]
+            self.ref_audio_label.setText("已加载：" + str(filenames[0]))
+
 
     def onVoiceComboboxChanged(self, text):
         if text == "阿梓":
-            self.spk_id = 174
-        elif text == "老菊":
             self.spk_id = 175
-        elif text == "海子姐":
+        elif text == "老菊":
             self.spk_id = 176
+        elif text == "海子姐":
+            self.spk_id = 177
 
     def onTTSStyleComboboxChanged(self, text):
         if text == "正常":
