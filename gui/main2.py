@@ -1,6 +1,6 @@
 import sys
 import os
-from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QPushButton, QAction, QLineEdit, QMessageBox, QComboBox, QLabel, QFileDialog
+from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QPushButton, QCheckBox, QLineEdit, QMessageBox, QComboBox, QLabel, QFileDialog
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import pyqtSlot, QUrl
 import sounddevice as sd
@@ -40,7 +40,7 @@ class App(QMainWindow):
         self.left = 10
         self.top = 10
         self.width = 400
-        self.height = 300
+        self.height = 320
         self.initUI()
         self.initModel()
     
@@ -131,10 +131,18 @@ class App(QMainWindow):
         self.ref_audio_button.clicked.connect(self.loadRefWavFile)
 
         self.ref_audio_label = QLabel(self)
-        self.ref_audio_label.move(20, 240)
+        self.ref_audio_label.move(160, 240)
         self.ref_audio_label.resize(380, 40)
         self.ref_audio_label.setText("未加载参考音频")
         self.ref_audio_path = ""
+
+        # use gst button
+        self.use_gst_button = QCheckBox("使用gst参考音频", self)
+        self.use_gst_button.setChecked(True)
+        self.use_gst_button.toggled.connect(self.onClickedGST)
+        self.use_gst_button.move(20, 240)
+        self.use_gst_button.resize(160, 40)
+
         self.show()
 
     def initModel(self, tts_model=None):
@@ -156,6 +164,7 @@ class App(QMainWindow):
         self.speaker_dict="../exp/fastspeech2_bili3_aishell3/speaker_id_map.txt"
         self.spk_id = 175
         self.wav = None
+        self.use_gst = True
 
         if self.ngpu == 0:
             paddle.set_device("cpu")
@@ -199,7 +208,7 @@ class App(QMainWindow):
 
         odim = self.fastspeech2_config.n_mels
         self.model = FastSpeech2(
-            idim=vocab_size, odim=odim, **self.fastspeech2_config["model"], spk_num=self.spk_num)
+            idim=vocab_size, odim=odim, **self.fastspeech2_config["model"], spk_num=self.spk_num, use_gst=self.use_gst)
 
         self.model.set_state_dict(
             paddle.load(self.fastspeech2_checkpoint)["main_params"])
@@ -216,7 +225,7 @@ class App(QMainWindow):
 
     @pyqtSlot()
     def onGenerateButtonClicked(self):
-        if self.ref_audio_path == "":
+        if self.ref_audio_path == "" and self.use_gst:
             self.messageDialog("请先选择参考音频！")
             return
 
@@ -434,10 +443,18 @@ class App(QMainWindow):
             self.log("Error in audio playback. Try selecting a different audio output device.")
             self.log("Your device must be connected before you start the toolbox.")
 
-    
     def messageDialog(self, text):
         msg_box = QMessageBox(QMessageBox.Warning, '错误', text)
         msg_box.exec_()
+
+    def onClickedGST(self):
+        if self.use_gst_button.isChecked():
+            self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_62085.pdz"
+            self.use_gst = True
+        else:
+            self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_165560.pdz"
+            self.use_gst = False
+        self.loadAcousticModel()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

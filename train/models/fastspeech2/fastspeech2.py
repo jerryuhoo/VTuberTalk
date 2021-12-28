@@ -34,7 +34,6 @@ from paddlespeech.t2s.modules.predictor.variance_predictor import VariancePredic
 from paddlespeech.t2s.modules.tacotron2.decoder import Postnet
 from paddlespeech.t2s.modules.transformer.encoder import ConformerEncoder
 from paddlespeech.t2s.modules.transformer.encoder import TransformerEncoder
-from paddlespeech.t2s.modules.transformer.attention import MultiHeadedAttention
 from paddlespeech.t2s.modules.style_encoder import StyleEncoder
 
 class FastSpeech2(nn.Layer):
@@ -124,7 +123,7 @@ class FastSpeech2(nn.Layer):
             tone_embed_dim: int=None,
             tone_embed_integration_type: str="add",
             # gst emb
-            use_gst: bool=True,
+            use_gst: bool=False,
             gst_tokens: int=10,
             gst_heads: int=4,
             gst_conv_layers: int=6,
@@ -262,6 +261,24 @@ class FastSpeech2(nn.Layer):
             Tone embedding dimension. If not None, assume that tone_num is not None.
         tone_embed_integration_type : str
             How to integrate tone embedding.
+        use_gst : str, optional
+            Whether to use global style token.
+        gst_tokens : int, optional
+            The number of GST embeddings.
+        gst_heads : int, optional
+            The number of heads in GST multihead attention.
+        gst_conv_layers : int, optional
+            The number of conv layers in GST.
+        gst_conv_chans_list : Sequence[int], optional
+                List of the number of channels of conv layers in GST.
+        gst_conv_kernel_size : int, optional
+            Kernal size of conv layers in GST.
+        gst_conv_stride : int, optional
+            Stride size of conv layers in GST.
+        gst_gru_layers : int, optional
+            The number of GRU layers in GST.
+        gst_gru_units : int, optional
+            The number of GRU units in GST.
         init_type : str
             How to initialize transformer parameters.
         init_enc_alpha : float
