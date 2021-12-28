@@ -30,7 +30,7 @@ from paddlespeech.t2s.models.parallel_wavegan import PWGInference
 from paddlespeech.t2s.modules.normalizer import ZScore
 from paddlespeech.t2s.data.get_feats import LogMelFBank
 import librosa
-
+from sklearn.preprocessing import StandardScaler
 
 class App(QMainWindow):
 
@@ -142,7 +142,7 @@ class App(QMainWindow):
         # parse args and config and redirect to train_sp
         
         self.fastspeech2_config_path = "../exp/fastspeech2_bili3_aishell3/default_multi.yaml"
-        self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_165560.pdz"
+        self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_62085.pdz"
         self.fastspeech2_stat = "../exp/fastspeech2_bili3_aishell3/speech_stats.npy"
         self.fastspeech2_pitch_stat = "../exp/fastspeech2_bili3_aishell3/pitch_stats.npy"
         self.fastspeech2_energy_stat = "../exp/fastspeech2_bili3_aishell3/energy_stats.npy"
@@ -305,6 +305,13 @@ class App(QMainWindow):
                 fmax=self.fastspeech2_config.fmax)
 
             logmel = mel_extractor.get_log_mel_fbank(wav)
+            # normalize, restore scaler
+            speech_scaler = StandardScaler()
+            speech_scaler.mean_ = np.load(self.fastspeech2_stat)[0]
+            speech_scaler.scale_ = np.load(self.fastspeech2_stat)[1]
+            speech_scaler.n_features_in_ = speech_scaler.mean_.shape[0]
+            logmel = speech_scaler.transform(logmel)
+            
             speech = paddle.to_tensor(logmel)
         except:
             speech = None
@@ -367,7 +374,7 @@ class App(QMainWindow):
         if dialog.exec_():
             filenames= dialog.selectedFiles()
             self.ref_audio_path = filenames[0]
-            self.ref_audio_label.setText("已加载：" + str(filenames[0]))
+            self.ref_audio_label.setText("已加载：" + os.path.basename(filenames[0]))
 
 
     def onVoiceComboboxChanged(self, text):
