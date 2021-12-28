@@ -16,13 +16,20 @@ import yaml
 from yacs.config import CfgNode
 
 from paddlespeech.t2s.frontend.zh_frontend import Frontend
-from paddlespeech.t2s.models.fastspeech2 import FastSpeech2
+
+import sys
+sys.path.append("../train/models")
+from fastspeech2 import FastSpeech2
+# from paddlespeech.t2s.models.fastspeech2 import FastSpeech2
+
 # from paddlespeech.t2s.models.fastspeech2 import StyleFastSpeech2Inference
 sys.path.append("..") 
 from train.models.fastspeech2 import StyleFastSpeech2Inference
 from paddlespeech.t2s.models.parallel_wavegan import PWGGenerator
 from paddlespeech.t2s.models.parallel_wavegan import PWGInference
 from paddlespeech.t2s.modules.normalizer import ZScore
+from paddlespeech.t2s.data.get_feats import LogMelFBank
+import librosa
 
 
 class App(QMainWindow):
@@ -125,7 +132,7 @@ class App(QMainWindow):
         # parse args and config and redirect to train_sp
         
         self.fastspeech2_config_path = "../exp/fastspeech2_bili3_aishell3/default_multi.yaml"
-        self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_179790.pdz"
+        self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_8278.pdz"
         self.fastspeech2_stat = "../exp/fastspeech2_bili3_aishell3/speech_stats.npy"
         self.fastspeech2_pitch_stat = "../exp/fastspeech2_bili3_aishell3/pitch_stats.npy"
         self.fastspeech2_energy_stat = "../exp/fastspeech2_bili3_aishell3/energy_stats.npy"
@@ -268,6 +275,28 @@ class App(QMainWindow):
             pitch_scale = 0.7
         elif self.style == "normal":
             pitch_scale = 1                         
+         
+        fp = "ref.wav"
+        record = None
+        wav, _ = librosa.load(str(fp), sr=self.fastspeech2_config.fs)
+        if len(wav.shape) != 1 or np.abs(wav).max() > 1.0:
+            return record
+        assert len(wav.shape) == 1, f"ref audio is not a mono-channel audio."
+        assert np.abs(wav).max(
+        ) <= 1.0, f"ref audio is seems to be different that 16 bit PCM."
+
+        mel_extractor = LogMelFBank(
+            sr=self.fastspeech2_config.fs,
+            n_fft=self.fastspeech2_config.n_fft,
+            hop_length=self.fastspeech2_config.n_shift,
+            win_length=self.fastspeech2_config.win_length,
+            window=self.fastspeech2_config.window,
+            n_mels=self.fastspeech2_config.n_mels,
+            fmin=self.fastspeech2_config.fmin,
+            fmax=self.fastspeech2_config.fmax)
+
+        logmel = mel_extractor.get_log_mel_fbank(wav)
+        speech = paddle.to_tensor(logmel)
         
         for utt_id, sentence in sentences:
             input_ids = self.frontend.get_input_ids(
@@ -277,6 +306,7 @@ class App(QMainWindow):
             with paddle.no_grad():
                 mel = fastspeech2_inference(
                     phone_ids,
+                    speech=speech,
                     durations=durations,
                     durations_scale=durations_scale,
                     durations_bias=durations_bias,

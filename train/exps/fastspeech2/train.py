@@ -30,7 +30,11 @@ from yacs.config import CfgNode
 from paddlespeech.t2s.datasets.am_batch_fn import fastspeech2_multi_spk_batch_fn
 from paddlespeech.t2s.datasets.am_batch_fn import fastspeech2_single_spk_batch_fn
 from paddlespeech.t2s.datasets.data_table import DataTable
-from paddlespeech.t2s.models.fastspeech2 import FastSpeech2
+
+import sys
+sys.path.append("train/models")
+from fastspeech2 import FastSpeech2
+
 from paddlespeech.t2s.models.fastspeech2 import FastSpeech2Evaluator
 from paddlespeech.t2s.models.fastspeech2 import FastSpeech2Updater
 from paddlespeech.t2s.training.extensions.snapshot import Snapshot

@@ -34,7 +34,8 @@ from paddlespeech.t2s.modules.predictor.variance_predictor import VariancePredic
 from paddlespeech.t2s.modules.tacotron2.decoder import Postnet
 from paddlespeech.t2s.modules.transformer.encoder import ConformerEncoder
 from paddlespeech.t2s.modules.transformer.encoder import TransformerEncoder
-
+from paddlespeech.t2s.modules.transformer.attention import MultiHeadedAttention
+from paddlespeech.t2s.modules.style_encoder import StyleEncoder
 
 class FastSpeech2(nn.Layer):
     """FastSpeech2 module.
@@ -122,6 +123,16 @@ class FastSpeech2(nn.Layer):
             tone_num: int=None,
             tone_embed_dim: int=None,
             tone_embed_integration_type: str="add",
+            # gst emb
+            use_gst: bool=True,
+            gst_tokens: int=10,
+            gst_heads: int=4,
+            gst_conv_layers: int=6,
+            gst_conv_chans_list: Sequence[int]=(32, 32, 64, 64, 128, 128),
+            gst_conv_kernel_size: int=3,
+            gst_conv_stride: int=2,
+            gst_gru_layers: int=1,
+            gst_gru_units: int=128,
             # training related
             init_type: str="xavier_uniform",
             init_enc_alpha: float=1.0,
@@ -280,6 +291,8 @@ class FastSpeech2(nn.Layer):
         self.tone_embed_dim = tone_embed_dim
         if self.tone_embed_dim is not None:
             self.tone_embed_integration_type = tone_embed_integration_type
+        
+        self.use_gst = use_gst
 
         # use idx 0 as padding idx
         self.padding_idx = 0
@@ -350,6 +363,20 @@ class FastSpeech2(nn.Layer):
                 zero_triu=zero_triu, )
         else:
             raise ValueError(f"{encoder_type} is not supported.")
+
+        # define GST
+        if self.use_gst:
+            self.gst = StyleEncoder(
+                idim=odim,  # the input is mel-spectrogram
+                gst_tokens=gst_tokens,
+                gst_token_dim=adim,
+                gst_heads=gst_heads,
+                conv_layers=gst_conv_layers,
+                conv_chans_list=gst_conv_chans_list,
+                conv_kernel_size=gst_conv_kernel_size,
+                conv_stride=gst_conv_stride,
+                gru_layers=gst_gru_layers,
+                gru_units=gst_gru_units, )
 
         # define additional projection for speaker embedding
         if self.spk_embed_dim is not None:
@@ -546,6 +573,7 @@ class FastSpeech2(nn.Layer):
         before_outs, after_outs, d_outs, p_outs, e_outs = self._forward(
             xs,
             ilens,
+            ys,
             olens,
             ds,
             ps,
@@ -566,6 +594,7 @@ class FastSpeech2(nn.Layer):
     def _forward(self,
                  xs: paddle.Tensor,
                  ilens: paddle.Tensor,
+                 ys: paddle.Tensor,
                  olens: paddle.Tensor=None,
                  ds: paddle.Tensor=None,
                  ps: paddle.Tensor=None,
@@ -579,6 +608,11 @@ class FastSpeech2(nn.Layer):
         x_masks = self._source_mask(ilens)
         # (B, Tmax, adim)
         hs, _ = self.encoder(xs, x_masks)
+
+        # integrate with GST
+        if self.use_gst:
+            style_embs = self.gst(ys)
+            hs = hs + style_embs.unsqueeze(1)
 
         # integrate speaker embedding
         if self.spk_embed_dim is not None:
@@ -898,6 +932,7 @@ class StyleFastSpeech2Inference(FastSpeech2Inference):
 
     def forward(self,
                 text: paddle.Tensor,
+                speech: paddle.Tensor,
                 durations: Union[paddle.Tensor, np.ndarray]=None,
                 durations_scale: Union[int, float]=None,
                 durations_bias: Union[int, float]=None,
@@ -942,7 +977,7 @@ class StyleFastSpeech2Inference(FastSpeech2Inference):
         """
         spk_id = paddle.to_tensor(spk_id)
         normalized_mel, d_outs, p_outs, e_outs = self.acoustic_model.inference(
-            text, durations=None, pitch=None, energy=None, spk_emb=spk_emb, spk_id=spk_id)
+            text, speech=speech, durations=None, pitch=None, energy=None, spk_emb=spk_emb, spk_id=spk_id)
         # priority: groundtruth > scale/bias > previous output
         # set durations
         if isinstance(durations, np.ndarray):
@@ -991,6 +1026,7 @@ class StyleFastSpeech2Inference(FastSpeech2Inference):
 
         normalized_mel, d_outs, p_outs, e_outs = self.acoustic_model.inference(
             text,
+            speech=speech,
             durations=durations,
             pitch=pitch,
             energy=energy,
