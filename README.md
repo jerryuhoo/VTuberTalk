@@ -137,11 +137,17 @@ python tools/hanzi_to_pinyin.py --path <data/wav/speaker_name/split>
 ```shell
 pip install spleeter
 spleeter separate \
-     -o clean_raw \
+     -o <data/wav/speaker_name/clean_raw> \
      <data/wav/speaker_name/raw/*.wav>
 ```
 
 > 如果遇到CUDA的报错试试执行`export TF_FORCE_GPU_ALLOW_GROWTH=true`
+
+获取降噪后的人声并且重命名，这步做完之后的文件在clean_raw2，可以删除clean_raw。
+
+```shell
+python tools/glob_spleeter_vocals.py --path <data/wav/speaker_name/clean_raw>
+```
 
 ### 2.9. MFA音素对齐
 
