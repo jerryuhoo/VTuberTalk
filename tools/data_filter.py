@@ -28,7 +28,7 @@ def process(args, outdir):
             for line in f.readlines():
                 line_len = len(line)
                 count[line_len] += 1
-                if line_len < args.min or line_len > args.max:
+                if line_len < int(args.min) or line_len > int(args.max):
                     move(path, file, outdir)
 
     for i in range(len(count)):
