@@ -74,6 +74,12 @@ pip install pydub
 python tools/video_to_wav.py --path <data to folder or file>
 ```
 
+可选项：如果视频过长，使用以下的命令将视频切割
+
+```shell
+python tools/cut_source.py --path <data/wav/video/> --min <minute to cut> --sr <sample rate>
+```
+
 其中，在video_to_wav可设置采样率，一般设置为16000，因为如果要使用语音切分工具的话，16000是支持的采样率之一。
 
 ### 2.2. 将音频分割成片段
