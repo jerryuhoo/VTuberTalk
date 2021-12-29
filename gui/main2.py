@@ -25,10 +25,12 @@ from fastspeech2 import FastSpeech2
 # from paddlespeech.t2s.models.fastspeech2 import StyleFastSpeech2Inference
 sys.path.append("..") 
 from train.models.fastspeech2 import StyleFastSpeech2Inference
-from paddlespeech.t2s.models.parallel_wavegan import PWGGenerator
+from paddlespeech.t2s.models.hifigan import HiFiGANInference
 from paddlespeech.t2s.models.parallel_wavegan import PWGInference
+import paddlespeech.t2s.models as ttsModels
 from paddlespeech.t2s.modules.normalizer import ZScore
 from paddlespeech.t2s.data.get_feats import LogMelFBank
+
 import librosa
 from sklearn.preprocessing import StandardScaler
 
@@ -150,7 +152,7 @@ class App(QMainWindow):
         # parse args and config and redirect to train_sp
         
         self.fastspeech2_config_path = "../exp/fastspeech2_bili3_aishell3/default_multi.yaml"
-        self.fastspeech2_checkpoint_gst = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_99336.pdz"
+        self.fastspeech2_checkpoint_gst = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_128309.pdz"
         self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_165560.pdz"
         self.fastspeech2_stat = "../exp/fastspeech2_bili3_aishell3/speech_stats.npy"
         self.fastspeech2_pitch_stat = "../exp/fastspeech2_bili3_aishell3/pitch_stats.npy"
@@ -158,6 +160,9 @@ class App(QMainWindow):
         self.pwg_config_path = "../pretrained_models/pwg_aishell3_ckpt_0.5/default.yaml"
         self.pwg_checkpoint = "../pretrained_models/pwg_aishell3_ckpt_0.5/snapshot_iter_1000000.pdz" 
         self.pwg_stat = "../pretrained_models/pwg_aishell3_ckpt_0.5/feats_stats.npy"
+        self.hifigan_config_path = "../pretrained_models/hifigan_aishell3/default.yaml"
+        self.hifigan_checkpoint = "../pretrained_models/hifigan_aishell3/snapshot_iter_120000.pdz" 
+        self.hifigan_stat = "../pretrained_models/hifigan_aishell3/feats_stats.npy"
         self.phones_dict = "../exp/fastspeech2_bili3_aishell3/phone_id_map.txt"
         self.ngpu = 0
         self.style = "Normal"
@@ -166,6 +171,7 @@ class App(QMainWindow):
         self.spk_id = 175
         self.wav = None
         self.use_gst = True
+        self.vocoder = "pwg"
 
         if self.ngpu == 0:
             paddle.set_device("cpu")
@@ -176,6 +182,8 @@ class App(QMainWindow):
             self.fastspeech2_config = CfgNode(yaml.safe_load(f))
         with open(self.pwg_config_path) as f:
             self.pwg_config = CfgNode(yaml.safe_load(f))
+        with open(self.hifigan_config_path) as f:
+            self.hifigan_config = CfgNode(yaml.safe_load(f))
 
         self.voice_cloning = None
 
@@ -222,10 +230,30 @@ class App(QMainWindow):
 
     def loadVocoderModel(self):   
         # vocoder
-        self.vocoder = PWGGenerator(**self.pwg_config["generator_params"])
-        self.vocoder.set_state_dict(paddle.load(self.pwg_checkpoint)["generator_params"])
-        self.vocoder.remove_weight_norm()
-        self.vocoder.eval()
+        class_map = {
+            "hifigan": "HiFiGANGenerator",
+            "mb_melgan": "MelGANGenerator",
+            "pwgan": "PWGGenerator",
+            "style_melgan": "StyleMelGANGenerator",
+        }
+
+        if self.vocoder == "pwg":
+            checkpoint = self.pwg_checkpoint
+            config = self.pwg_config
+            generator_type = "pwgan"
+        elif self.vocoder == "hifigan":
+            checkpoint = self.hifigan_checkpoint
+            config = self.hifigan_config
+            generator_type = "hifigan"
+
+        generator_class = getattr(ttsModels,
+                              class_map[generator_type])
+        self.generator = generator_class(**config["generator_params"])
+        state_dict = paddle.load(checkpoint)
+        self.generator.set_state_dict(state_dict["generator_params"])
+        self.generator.remove_weight_norm()
+        self.generator.eval()
+
         print("vocoder model done!")
 
     @pyqtSlot()
@@ -248,19 +276,25 @@ class App(QMainWindow):
         std = paddle.to_tensor(std)
         fastspeech2_normalizer = ZScore(mu, std)
 
-        stat = np.load(self.pwg_stat)
+        if self.vocoder == "pwg":
+            stat = np.load(self.pwg_stat)
+        elif self.vocoder == "hifigan":
+            stat = np.load(self.hifigan_stat)
         mu, std = stat
         mu = paddle.to_tensor(mu)
         std = paddle.to_tensor(std)
-        pwg_normalizer = ZScore(mu, std)
+        vocoder_normalizer = ZScore(mu, std)
 
         fastspeech2_inference = StyleFastSpeech2Inference(
             fastspeech2_normalizer, self.model, self.fastspeech2_pitch_stat,
             self.fastspeech2_energy_stat)
         fastspeech2_inference.eval()
 
-        pwg_inference = PWGInference(pwg_normalizer, self.vocoder)
-        pwg_inference.eval()
+        if self.vocoder == "pwg":
+            vocoder_inference = PWGInference(vocoder_normalizer, self.generator)
+        elif self.vocoder == "hifigan":
+            vocoder_inference = HiFiGANInference(vocoder_normalizer, self.generator)
+        vocoder_inference.eval()
 
         robot = False
         durations = None
@@ -363,7 +397,9 @@ class App(QMainWindow):
                     spk_emb=None,
                     spk_id=self.spk_id
                     )
-                self.wav = pwg_inference(mel)
+                print("mel infer done")
+                self.wav = vocoder_inference(mel)
+                print("vocoder infer done")
             print(f"{self.style}_{utt_id} done!")
 
         self.playAudioFile()
@@ -432,9 +468,10 @@ class App(QMainWindow):
 
     def onVocModelComboboxChanged(self, text):
         if text == "parallel wavegan":
-            pass
+            self.vocoder = "pwg"
         elif text == "hifigan":
-            pass
+            self.vocoder = "hifigan"
+        self.loadVocoderModel()
 
     def playAudioFile(self):
         if type(self.wav) == type(None):
