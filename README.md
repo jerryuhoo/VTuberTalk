@@ -82,57 +82,7 @@ python tools/cut_source.py --path <data/wav/video/> --min <minute to cut> --sr <
 
 其中，在video_to_wav可设置采样率，一般设置为16000，因为如果要使用语音切分工具的话，16000是支持的采样率之一。
 
-### 2.2. 将音频分割成片段
-
-步骤2.2和2.3仅限于没有字幕的音频，如果在YouTube下载的话大概率会有字幕文件，下载字幕文件后直接跳转到“2.4. 使用字幕获得文本”即可。
-
-音频分割使用了webrtcvad模块，其中第一个参数aggressiveness是分割检测的敏感度，数字越大，对于静音检测越敏感，分割的音频个数也越多。范围为0～3。
-
-```shell
-python tools/split_audio.py --ag <aggressiveness> --in_path <data/wav/speaker_name/raw>
-```
-
-### 2.3. 使用ASR获得文本
-
-```shell
-python tools/gen_text.py --path <data/wav/speaker_name/split> --lang <language: 'en' or 'zh'>
-```
-
-### 2.4. 使用字幕获得文本
-
-文件夹中可以有多个wav和srt文件，对应的wav和srt需要同名。
-
-```shell
-python tools/split_audio_by_srt.py --path <data>
-```
-
-### 2.5. 去除过长过短文本
-
-```shell
-python tools/data_filter.py --path <data/wav/speaker_name/split>
-```
-
-### 2.6. 文本纠正
-
-收集所有的文本到一个txt文件中。
-
-```shell
-python tools/glob_text.py --path <data/wav/speaker_name/split>
-```
-
-打开txt文件，修改错字后再运行
-
-```shell
-python tools/revise_text.py --path <data/wav/speaker_name/split>
-```
-
-### 2.7. 汉字转拼音
-
-```shell
-python tools/hanzi_to_pinyin.py --path <data/wav/speaker_name/split>
-```
-
-### 2.8. Spleeter降噪
+### 2.2. Spleeter降噪
 
 ```shell
 pip install spleeter
@@ -147,6 +97,62 @@ spleeter separate \
 
 ```shell
 python tools/glob_spleeter_vocals.py --path <data/wav/speaker_name/clean_raw>
+```
+
+降噪后又变成了双声道，因此需要执行
+
+```shell
+python tools/audio_to_mono.py --path <data/wav/speaker_name/clean_raw2>
+```
+
+### 2.3. 将音频分割成片段
+
+步骤2.2和2.3仅限于没有字幕的音频，如果在YouTube下载的话大概率会有字幕文件，下载字幕文件后直接跳转到“2.4. 使用字幕获得文本”即可。
+
+音频分割使用了webrtcvad模块，其中第一个参数aggressiveness是分割检测的敏感度，数字越大，对于静音检测越敏感，分割的音频个数也越多。范围为0～3。
+
+```shell
+python tools/split_audio.py --ag <aggressiveness> --in_path <data/wav/speaker_name/raw>
+```
+
+### 2.4. 使用ASR获得文本
+
+```shell
+python tools/gen_text.py --path <data/wav/speaker_name/split> --lang <language: 'en' or 'zh'>
+```
+
+### 2.5. 使用字幕获得文本
+
+文件夹中可以有多个wav和srt文件，对应的wav和srt需要同名。
+
+```shell
+python tools/split_audio_by_srt.py --path <data>
+```
+
+### 2.6. 去除过长过短文本
+
+```shell
+python tools/data_filter.py --path <data/wav/speaker_name/split>
+```
+
+### 2.7. 文本纠正
+
+收集所有的文本到一个txt文件中。
+
+```shell
+python tools/glob_text.py --path <data/wav/speaker_name/split>
+```
+
+打开txt文件，修改错字后再运行
+
+```shell
+python tools/revise_text.py --path <data/wav/speaker_name/split>
+```
+
+### 2.8. 汉字转拼音
+
+```shell
+python tools/hanzi_to_pinyin.py --path <data/wav/speaker_name/split>
 ```
 
 ### 2.9. MFA音素对齐

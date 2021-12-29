@@ -1,5 +1,21 @@
 from pydub import AudioSegment
-sound = AudioSegment.from_wav("2021_7_22_23_in.wav")
-sound = sound.set_channels(1)
-sound = sound.set_frame_rate(16000)
-sound.export("2021_7_22_23.wav", format="wav")
+import os
+import argparse
+
+def process(args):
+    path=args.path
+    files=os.listdir(path)
+    for file in files:
+        sound = AudioSegment.from_wav(os.path.join(args.path, file))
+        sound = sound.set_channels(1)
+        sound = sound.set_frame_rate(args.sr)
+        sound.export(os.path.join(args.path, file), format="wav")
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(__doc__)
+    parser.add_argument("--path", type=str, required=True)
+    parser.add_argument("--sr", type=str, default=16000)
+    args = parser.parse_args()
+    process(args)
+
+
