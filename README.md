@@ -134,11 +134,14 @@ python tools/hanzi_to_pinyin.py --path <data/wav/speaker_name/split>
 
 ### 2.8. Spleeter降噪
 
-WIP
-
 ```shell
 pip install spleeter
+spleeter separate \
+     -o clean_raw \
+     <data/wav/speaker_name/raw/*.wav>
 ```
+
+> 如果遇到CUDA的报错试试执行`export TF_FORCE_GPU_ALLOW_GROWTH=true`
 
 ### 2.9. MFA音素对齐
 
