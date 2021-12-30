@@ -171,7 +171,9 @@ class SpeedySpeech(nn.Layer):
             decoder_output_size,
             decoder_kernel_size,
             decoder_dilations,
-            tone_size=None, ):
+            tone_size=None, 
+            spk_num: int=None,
+            spk_embed_dim: int=None,):
         super().__init__()
         encoder = SpeedySpeechEncoder(vocab_size, tone_size,
                                       encoder_hidden_size, encoder_kernel_size,
@@ -183,14 +185,28 @@ class SpeedySpeech(nn.Layer):
         self.encoder = encoder
         self.duration_predictor = duration_predictor
         self.decoder = decoder
+        self.spk_embed_dim = spk_embed_dim
+        if spk_num and self.spk_embed_dim:
+            self.spk_embedding_table = nn.Embedding(
+                num_embeddings=spk_num,
+                embedding_dim=self.spk_embed_dim,
+                padding_idx=self.padding_idx)
 
-    def forward(self, text, tones, durations):
+    def forward(self, text, tones, durations, spk_id: paddle.Tensor=None):
         # input of embedding must be int64
         text = paddle.cast(text, 'int64')
         tones = paddle.cast(tones, 'int64')
+        if spk_id is not None:
+            spk_id = paddle.cast(spk_id, 'int64')
         durations = paddle.cast(durations, 'int64')
         encodings = self.encoder(text, tones)
         # (B, T)
+
+        if self.spk_embed_dim is not None:
+            if spk_id is not None:
+                spk_emb = self.spk_embedding_table(spk_id)
+                encodings = self._integrate_with_spk_embed(encodings, spk_emb)
+
         pred_durations = self.duration_predictor(encodings.detach())
 
         # expand encodings

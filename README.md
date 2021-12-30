@@ -218,11 +218,22 @@ python tools/gen_duration_from_textgrid.py \
 
 ##### 2. speedyspeech 模型
 
+单人
+
 ```shell
 python tools/gen_duration_from_textgrid.py \
     --inputdir=data/TextGrid \
     --output=data/durations.txt \
     --config=train/conf/speedyspeech/default.yaml
+```
+
+多人
+
+```shell
+python tools/gen_duration_from_textgrid.py \
+    --inputdir=data/TextGrid \
+    --output=data/durations.txt \
+    --config=train/conf/speedyspeech/default_multi.yaml
 ```
 
 #### 提取features
@@ -242,6 +253,8 @@ python train/exps/fastspeech2/preprocess.py \
 
 ##### 2. speedyspeech 模型
 
+单人
+
 ```shell
 python train/exps/speedyspeech/preprocess.py \
     --dataset=other \
@@ -249,6 +262,20 @@ python train/exps/speedyspeech/preprocess.py \
     --dumpdir=dump \
     --dur-file=data/durations.txt \
     --config=train/conf/speedyspeech/default.yaml \
+    --num-cpu=16 \
+    --cut-sil=True \
+    --use-relative-path=True
+```
+
+多人
+
+```shell
+python train/exps/speedyspeech/preprocess.py \
+    --dataset=other \
+    --rootdir=data/ \
+    --dumpdir=dump \
+    --dur-file=data/durations.txt \
+    --config=train/conf/speedyspeech/default_multi.yaml \
     --num-cpu=16 \
     --cut-sil=True \
     --use-relative-path=True
@@ -316,6 +343,8 @@ python train/exps/fastspeech2/normalize.py \
 
 ##### 2. speedyspeech 模型
 
+单人
+
 ```shell
 python train/exps/speedyspeech/normalize.py \
     --metadata=dump/train/raw/metadata.jsonl \
@@ -342,6 +371,37 @@ python train/exps/speedyspeech/normalize.py \
     --use-relative-path=True
 ```
 
+多人
+
+```shell
+python train/exps/speedyspeech/normalize.py \
+    --metadata=dump/train/raw/metadata.jsonl \
+    --dumpdir=dump/train/norm \
+    --stats=dump/train/feats_stats.npy \
+    --phones-dict=dump/phone_id_map.txt \
+    --tones-dict=dump/tone_id_map.txt \
+    --speaker-dict=dump/speaker_id_map.txt \
+    --use-relative-path=True
+
+python train/exps/speedyspeech/normalize.py \
+    --metadata=dump/dev/raw/metadata.jsonl \
+    --dumpdir=dump/dev/norm \
+    --stats=dump/train/feats_stats.npy \
+    --phones-dict=dump/phone_id_map.txt \
+    --tones-dict=dump/tone_id_map.txt \
+    --speaker-dict=dump/speaker_id_map.txt \
+    --use-relative-path=True
+
+python train/exps/speedyspeech/normalize.py \
+    --metadata=dump/test/raw/metadata.jsonl \
+    --dumpdir=dump/test/norm \
+    --stats=dump/train/feats_stats.npy \
+    --phones-dict=dump/phone_id_map.txt \
+    --tones-dict=dump/tone_id_map.txt \
+    --speaker-dict=dump/speaker_id_map.txt \
+    --use-relative-path=True
+```
+
 ## 3. 训练
 
 ### 3.1. fastspeech2 模型（多人）
@@ -359,6 +419,8 @@ python train/exps/fastspeech2/train.py \
 
 ### 3.2. speedyspeech模型
 
+单人
+
 ```shell
 python train/exps/speedyspeech/train.py \
     --train-metadata=dump/train/norm/metadata.jsonl \
@@ -368,6 +430,21 @@ python train/exps/speedyspeech/train.py \
     --ngpu=1 \
     --phones-dict=dump/phone_id_map.txt \
     --tones-dict=dump/tone_id_map.txt \
+    --use-relative-path=True
+```
+
+多人
+
+```shell
+python train/exps/speedyspeech/train.py \
+    --train-metadata=dump/train/norm/metadata.jsonl \
+    --dev-metadata=dump/dev/norm/metadata.jsonl \
+    --config=train/conf/speedyspeech/default.yaml \
+    --output-dir=exp/speedyspeech_bili3_aishell3 \
+    --ngpu=1 \
+    --phones-dict=dump/phone_id_map.txt \
+    --tones-dict=dump/tone_id_map.txt \
+    --speaker-dict=dump/speaker_id_map.txt \
     --use-relative-path=True
 ```
 
