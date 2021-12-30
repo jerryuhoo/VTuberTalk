@@ -380,6 +380,7 @@ class App(QMainWindow):
                 self.messageDialog("输入的文字不能识别，请重新输入！")
                 return
             print("self.spk_id", self.spk_id)
+            self.spk_id = paddle.to_tensor(self.spk_id)
             with paddle.no_grad():
                 mel = fastspeech2_inference(
                     phone_ids,
