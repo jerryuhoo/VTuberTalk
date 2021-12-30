@@ -133,7 +133,7 @@ def train_sp(args, config):
 
     odim = config.n_mels
     model = FastSpeech2(
-        idim=vocab_size, odim=odim, spk_num=spk_num, **config["model"])
+        idim=vocab_size, odim=odim, spk_num=spk_num, **config["model"], use_gst=args.use_gst)
     if world_size > 1:
         model = DataParallel(model)
     print("model done!")
@@ -195,6 +195,12 @@ def main():
         type=str2bool,
         default=False,
         help="whether training voice cloning model.")
+    
+    parser.add_argument(
+        "--use_gst",
+        type=str2bool,
+        default=False,
+        help="whether training gst.")
 
     args = parser.parse_args()
 

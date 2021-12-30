@@ -383,6 +383,7 @@ class FastSpeech2(nn.Layer):
 
         # define GST
         if self.use_gst:
+            print("use gst")
             self.gst = StyleEncoder(
                 idim=odim,  # the input is mel-spectrogram
                 gst_tokens=gst_tokens,
