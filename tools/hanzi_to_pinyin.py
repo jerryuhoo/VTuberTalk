@@ -38,7 +38,7 @@ def process(path):
             f1.close()
             print("write to " + output_file_path)
         else:
-            print("file ", filename, " format not supported!")
+            # print("file ", filename, " format not supported!")
             continue
         
 

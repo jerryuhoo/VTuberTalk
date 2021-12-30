@@ -31,21 +31,34 @@ pip install paddlepaddle paddlespeech
 ├── gui
 ├── tools
 ├── pretrained_models
+│   ├── 2stems
 │   ├── pwg_aishell3_ckpt_0.5
 │   └── hifigan_csmsc_ckpt_0.1.1
 ├── MFA
-│   ├── pinyin.dict
-│   └── mandarin.zip
+│   ├── pinyin_eng.dict
+│   └── mfa_model.zip
 └── data
-    ├── wav
+    ├── wav_temp
     │   ├── speaker_name1
     │   │   ├── video
     │   │   ├── raw
-    │   │   ├── unrecognized            
+    │   │   ├── clean_raw2
+    │   │   ├── unrecognized
+    │   │   ├── unused          
     │   │   └── split   
     │   │       ├── .wav 
     │   │       ├── .txt
     │   │       └── .lab 
+    │   └── speaker_name2
+    ├── TextGrid_temp
+    │   ├── speaker_name1
+    │   │   └── .TextGrid
+    │   └── speaker_name2
+    ├── wav
+    │   ├── speaker_name1
+    │   │   ├── .wav 
+    │   │   ├── .txt
+    │   │   └── .lab 
     │   └── speaker_name2
     ├── TextGrid
     │   ├── speaker_name1
@@ -55,6 +68,15 @@ pip install paddlepaddle paddlespeech
 ```
 
 ## 2. 数据准备
+
+### 2.0. 一键处理（包含2.1到2.9）
+
+如果运行这一步则可以忽略2.1-2.9，只需要把你的视频文件（flv格式）放在data/wav_temp/speaker_name/video文件夹中即可。
+在run_preprocess.sh中指定你想要的stage，建议在stage 5之后手动修正错误的语音识别结果。
+
+```shell
+./run_preprocess.sh
+```
 
 ### 2.1. 从直播录像中获取音频
 
@@ -112,7 +134,7 @@ python tools/audio_to_mono.py --path <data/wav/speaker_name/clean_raw2>
 音频分割使用了webrtcvad模块，其中第一个参数aggressiveness是分割检测的敏感度，数字越大，对于静音检测越敏感，分割的音频个数也越多。范围为0～3。
 
 ```shell
-python tools/split_audio.py --ag <aggressiveness> --in_path <data/wav/speaker_name/raw>
+python tools/split_audio.py --ag <aggressiveness> --in_path <data/wav/speaker_name/clean_raw2>
 ```
 
 ### 2.4. 使用ASR获得文本
@@ -446,7 +468,5 @@ python main2.py
 ## 6. TODO list
 
 * 优化ASR流程，目前batch size = 1，速度慢。
-* 新建一个run_preprocess.sh，一键预处理。
 * spleeter降噪。
-* 加入GST合成不同的风格。
 * preprocess优化，不需要重复处理数据集。
