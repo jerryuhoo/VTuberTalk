@@ -165,11 +165,17 @@ class App(QMainWindow):
         # self.speaker_dict="../exp/fastspeech2_bili3_aishell3/speaker_id_map.txt"
 
         self.speedyspeech_config_path = "../exp/speedyspeech_bili2/default_multi.yaml"
-        self.speedyspeech_checkpoint = "../exp/speedyspeech_bili2/checkpoints/snapshot_iter_3045.pdz"
+        self.speedyspeech_checkpoint = "../exp/speedyspeech_bili2/checkpoints/snapshot_iter_4466.pdz"
         self.speedyspeech_stat = "../exp/speedyspeech_bili2/feats_stats.npy"
         self.tones_dict = "../exp/speedyspeech_bili2/tone_id_map.txt"
         self.phones_dict = "../exp/speedyspeech_bili2/phone_id_map.txt"
         self.speaker_dict="../exp/speedyspeech_bili2/speaker_id_map.txt"
+        # self.speedyspeech_config_path = "../exp/speedyspeech_ghost/default.yaml"
+        # self.speedyspeech_checkpoint = "../exp/speedyspeech_ghost/checkpoints/snapshot_iter_19800.pdz"
+        # self.speedyspeech_stat = "../exp/speedyspeech_ghost/feats_stats.npy"
+        # self.tones_dict = "../exp/speedyspeech_ghost/tone_id_map.txt"
+        # self.phones_dict = "../exp/speedyspeech_ghost/phone_id_map.txt"
+        # self.speaker_dict= None
 
         self.pwg_config_path = "../pretrained_models/pwg_aishell3_ckpt_0.5/default.yaml"
         self.pwg_checkpoint = "../pretrained_models/pwg_aishell3_ckpt_0.5/snapshot_iter_1000000.pdz" 
@@ -435,8 +441,13 @@ class App(QMainWindow):
             except:
                 self.messageDialog("输入的文字不能识别，请重新输入！")
                 return
+
             print("self.spk_id", self.spk_id)
+
             self.spk_id = paddle.to_tensor(self.spk_id)
+
+            # self.spk_id = None # temp
+
             with paddle.no_grad():
                 if self.acousticModel == "fastspeech2":
                     mel = fastspeech2_inference(

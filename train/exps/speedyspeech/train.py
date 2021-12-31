@@ -32,9 +32,12 @@ sys.path.append("train/exps")
 from am_batch_fn import speedyspeech_multi_spk_batch_fn
 from am_batch_fn import speedyspeech_single_spk_batch_fn
 from paddlespeech.t2s.datasets.data_table import DataTable
-from paddlespeech.t2s.models.speedyspeech import SpeedySpeech
-from paddlespeech.t2s.models.speedyspeech import SpeedySpeechEvaluator
-from paddlespeech.t2s.models.speedyspeech import SpeedySpeechUpdater
+
+sys.path.append("train/models")
+from speedyspeech import SpeedySpeech
+from speedyspeech import SpeedySpeechEvaluator
+from speedyspeech import SpeedySpeechUpdater
+
 from paddlespeech.t2s.training.extensions.snapshot import Snapshot
 from paddlespeech.t2s.training.extensions.visualizer import VisualDL
 from paddlespeech.t2s.training.optimizer import build_optimizers

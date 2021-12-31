@@ -200,6 +200,7 @@ class SpeedySpeech(nn.Layer):
                 padding_idx=self.padding_idx)
         self.encoder_hidden_size = encoder_hidden_size
         # define additional projection for speaker embedding
+        
         if self.spk_embed_dim is not None:
             if self.spk_embed_integration_type == "add":
                 self.spk_projection = nn.Linear(self.spk_embed_dim, self.encoder_hidden_size)
@@ -217,7 +218,6 @@ class SpeedySpeech(nn.Layer):
         encodings = self.encoder(text, tones)
         # (B, T)
 
-        print("temp,spk_embed_dim", self.spk_embed_dim)
         if self.spk_embed_dim is not None:
             if spk_id is not None:
                 spk_emb = self.spk_embedding_table(spk_id)
@@ -247,7 +247,6 @@ class SpeedySpeech(nn.Layer):
             tones = tones.unsqueeze(0)
 
         encodings = self.encoder(text, tones)
-        print("temp,spk_embed_dim", self.spk_embed_dim)
         if self.spk_embed_dim is not None:
             if spk_id is not None:
                 spk_emb = self.spk_embedding_table(spk_id)
