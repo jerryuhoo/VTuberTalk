@@ -439,8 +439,8 @@ python train/exps/speedyspeech/train.py \
 python train/exps/speedyspeech/train.py \
     --train-metadata=dump/train/norm/metadata.jsonl \
     --dev-metadata=dump/dev/norm/metadata.jsonl \
-    --config=train/conf/speedyspeech/default.yaml \
-    --output-dir=exp/speedyspeech_bili3_aishell3 \
+    --config=train/conf/speedyspeech/default_multi.yaml \
+    --output-dir=exp/speedyspeech_azi_nanami \
     --ngpu=1 \
     --phones-dict=dump/phone_id_map.txt \
     --tones-dict=dump/tone_id_map.txt \

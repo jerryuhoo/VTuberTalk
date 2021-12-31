@@ -15,16 +15,20 @@ import soundfile as sf
 import yaml
 from yacs.config import CfgNode
 
-from paddlespeech.t2s.frontend.zh_frontend import Frontend
-
 import sys
+
+sys.path.append("../train/frontend")
+from zh_frontend import Frontend
+
 sys.path.append("../train/models")
 from fastspeech2 import FastSpeech2
+from speedyspeech import SpeedySpeech
 # from paddlespeech.t2s.models.fastspeech2 import FastSpeech2
 
 # from paddlespeech.t2s.models.fastspeech2 import StyleFastSpeech2Inference
 sys.path.append("..") 
 from train.models.fastspeech2 import StyleFastSpeech2Inference
+from train.models.speedyspeech import SpeedySpeechInference
 from paddlespeech.t2s.models.hifigan import HiFiGANInference
 from paddlespeech.t2s.models.parallel_wavegan import PWGInference
 import paddlespeech.t2s.models as ttsModels
@@ -152,26 +156,38 @@ class App(QMainWindow):
         # parse args and config and redirect to train_sp
         
         self.fastspeech2_config_path = "../exp/fastspeech2_bili3_aishell3/default_multi.yaml"
-        self.fastspeech2_checkpoint_gst = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_128309.pdz"
+        self.fastspeech2_checkpoint_gst = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_28322.pdz"
         self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_165560.pdz"
         self.fastspeech2_stat = "../exp/fastspeech2_bili3_aishell3/speech_stats.npy"
         self.fastspeech2_pitch_stat = "../exp/fastspeech2_bili3_aishell3/pitch_stats.npy"
         self.fastspeech2_energy_stat = "../exp/fastspeech2_bili3_aishell3/energy_stats.npy"
+        # self.phones_dict = "../exp/fastspeech2_bili3_aishell3/phone_id_map.txt"
+        # self.speaker_dict="../exp/fastspeech2_bili3_aishell3/speaker_id_map.txt"
+
+        self.speedyspeech_config_path = "../exp/speedyspeech_bili2/default_multi.yaml"
+        self.speedyspeech_checkpoint = "../exp/speedyspeech_bili2/checkpoints/snapshot_iter_3045.pdz"
+        self.speedyspeech_stat = "../exp/speedyspeech_bili2/feats_stats.npy"
+        self.tones_dict = "../exp/speedyspeech_bili2/tone_id_map.txt"
+        self.phones_dict = "../exp/speedyspeech_bili2/phone_id_map.txt"
+        self.speaker_dict="../exp/speedyspeech_bili2/speaker_id_map.txt"
+
         self.pwg_config_path = "../pretrained_models/pwg_aishell3_ckpt_0.5/default.yaml"
         self.pwg_checkpoint = "../pretrained_models/pwg_aishell3_ckpt_0.5/snapshot_iter_1000000.pdz" 
         self.pwg_stat = "../pretrained_models/pwg_aishell3_ckpt_0.5/feats_stats.npy"
+
         self.hifigan_config_path = "../pretrained_models/hifigan_aishell3/default.yaml"
-        self.hifigan_checkpoint = "../pretrained_models/hifigan_aishell3/snapshot_iter_120000.pdz" 
+        self.hifigan_checkpoint = "../pretrained_models/hifigan_aishell3/snapshot_iter_260000.pdz" 
         self.hifigan_stat = "../pretrained_models/hifigan_aishell3/feats_stats.npy"
-        self.phones_dict = "../exp/fastspeech2_bili3_aishell3/phone_id_map.txt"
+
         self.ngpu = 0
         self.style = "Normal"
         self.speed = "1.0xspeed"
-        self.speaker_dict="../exp/fastspeech2_bili3_aishell3/speaker_id_map.txt"
-        self.spk_id = 175
+        
+        self.spk_id = 0
         self.wav = None
         self.use_gst = True
         self.vocoder = "pwg"
+        self.acousticModel = "speedyspeech"
 
         if self.ngpu == 0:
             paddle.set_device("cpu")
@@ -180,6 +196,8 @@ class App(QMainWindow):
 
         with open(self.fastspeech2_config_path) as f:
             self.fastspeech2_config = CfgNode(yaml.safe_load(f))
+        with open(self.speedyspeech_config_path) as f:
+            self.speedyspeech_config = CfgNode(yaml.safe_load(f))
         with open(self.pwg_config_path) as f:
             self.pwg_config = CfgNode(yaml.safe_load(f))
         with open(self.hifigan_config_path) as f:
@@ -190,7 +208,7 @@ class App(QMainWindow):
         fields = ["utt_id", "text"]
         self.spk_num = None
         if self.speaker_dict:
-            print("multiple speaker fastspeech2!")
+            print("multiple speaker")
             with open(self.speaker_dict, 'rt') as f:
                 spk_id_list = [line.strip().split() for line in f.readlines()]
             self.spk_num = len(spk_id_list)
@@ -199,34 +217,56 @@ class App(QMainWindow):
             print("voice cloning!")
             fields += ["spk_emb"]
         else:
-            print("single speaker fastspeech2!")
+            print("single speaker")
         print("spk_num:", self.spk_num)
 
         self.loadAcousticModel()
         self.loadVocoderModel()
-
-        self.frontend = Frontend(phone_vocab_path=self.phones_dict)
+        
+        if self.acousticModel == "fastspeech2":
+            self.frontend = Frontend(phone_vocab_path=self.phones_dict)
+        elif self.acousticModel == "speedyspeech":
+            self.frontend = Frontend(phone_vocab_path=self.phones_dict, tone_vocab_path=self.tones_dict)
         print("frontend done!") 
     
     def loadAcousticModel(self):
         # acoustic model
-        with open(self.phones_dict, "r") as f:
+        with open(self.phones_dict, "r", encoding='UTF-8') as f:
             phn_id = [line.strip().split() for line in f.readlines()]
         vocab_size = len(phn_id)
         print("vocab_size:", vocab_size)
 
-        odim = self.fastspeech2_config.n_mels
-        self.model = FastSpeech2(
-            idim=vocab_size, odim=odim, **self.fastspeech2_config["model"], spk_num=self.spk_num, use_gst=self.use_gst)
-        if self.use_gst:
-            self.model.set_state_dict(
-                paddle.load(self.fastspeech2_checkpoint_gst)["main_params"])
-        else:
-            self.model.set_state_dict(
-                paddle.load(self.fastspeech2_checkpoint)["main_params"])
+        if self.acousticModel == "fastspeech2":
+            print("fastspeech2")
+            odim = self.fastspeech2_config.n_mels
+            self.model = FastSpeech2(
+                idim=vocab_size, odim=odim, **self.fastspeech2_config["model"], spk_num=self.spk_num, use_gst=self.use_gst)
+            if self.use_gst:
+                self.model.set_state_dict(
+                    paddle.load(self.fastspeech2_checkpoint_gst)["main_params"])
+            else:
+                self.model.set_state_dict(
+                    paddle.load(self.fastspeech2_checkpoint)["main_params"])
+            self.model.eval()
+            print("fastspeech2 model done!")
+        elif self.acousticModel == "speedyspeech":
+            print("speedyspeech")
+            
+            tone_size = None
+            if self.tones_dict:
+                with open(self.tones_dict, "r") as f:
+                    tone_id = [line.strip().split() for line in f.readlines()]
+                tone_size = len(tone_id)
+                print("tone_size:", tone_size)
 
-        self.model.eval()
-        print("fastspeech2 model done!")
+            self.model = SpeedySpeech(
+                vocab_size=vocab_size, tone_size=tone_size, spk_num=self.spk_num, **self.speedyspeech_config["model"])
+
+            self.model.set_state_dict(
+                paddle.load(self.speedyspeech_checkpoint)["main_params"])
+            self.model.eval()
+            print("speedyspeech model done!")
+        
 
     def loadVocoderModel(self):   
         # vocoder
@@ -270,11 +310,18 @@ class App(QMainWindow):
         sentences = []
         sentences.append(("001", textboxValue))
 
-        stat = np.load(self.fastspeech2_stat)
-        mu, std = stat
-        mu = paddle.to_tensor(mu)
-        std = paddle.to_tensor(std)
-        fastspeech2_normalizer = ZScore(mu, std)
+        if self.acousticModel == "fastspeech2":
+            stat = np.load(self.fastspeech2_stat)
+            mu, std = stat
+            mu = paddle.to_tensor(mu)
+            std = paddle.to_tensor(std)
+            fastspeech2_normalizer = ZScore(mu, std)
+        elif self.acousticModel == "speedyspeech":
+            stat = np.load(self.speedyspeech_stat)
+            mu, std = stat
+            mu = paddle.to_tensor(mu)
+            std = paddle.to_tensor(std)
+            speedyspeech_normalizer = ZScore(mu, std)
 
         if self.vocoder == "pwg":
             stat = np.load(self.pwg_stat)
@@ -285,10 +332,15 @@ class App(QMainWindow):
         std = paddle.to_tensor(std)
         vocoder_normalizer = ZScore(mu, std)
 
-        fastspeech2_inference = StyleFastSpeech2Inference(
-            fastspeech2_normalizer, self.model, self.fastspeech2_pitch_stat,
-            self.fastspeech2_energy_stat)
-        fastspeech2_inference.eval()
+        if self.acousticModel == "fastspeech2":
+            fastspeech2_inference = StyleFastSpeech2Inference(
+                fastspeech2_normalizer, self.model, self.fastspeech2_pitch_stat,
+                self.fastspeech2_energy_stat)
+            fastspeech2_inference.eval()
+        elif self.acousticModel == "speedyspeech":
+            speedyspeech_inference = SpeedySpeechInference(
+                speedyspeech_normalizer, self.model)
+            speedyspeech_inference.eval()
 
         if self.vocoder == "pwg":
             vocoder_inference = PWGInference(vocoder_normalizer, self.generator)
@@ -372,8 +424,12 @@ class App(QMainWindow):
             speech = None
         
         for utt_id, sentence in sentences:
-            input_ids = self.frontend.get_input_ids(
-                sentence, merge_sentences=True, robot=robot)
+            if self.acousticModel == "fastspeech2":
+                input_ids = self.frontend.get_input_ids(
+                    sentence, merge_sentences=True, robot=robot)
+            elif self.acousticModel == "speedyspeech":
+                input_ids = self.frontend.get_input_ids(
+                sentence, merge_sentences=True, get_tone_ids=True)
             try:
                 phone_ids = input_ids["phone_ids"][0]
             except:
@@ -382,22 +438,30 @@ class App(QMainWindow):
             print("self.spk_id", self.spk_id)
             self.spk_id = paddle.to_tensor(self.spk_id)
             with paddle.no_grad():
-                mel = fastspeech2_inference(
-                    phone_ids,
-                    speech=speech,
-                    durations=durations,
-                    durations_scale=durations_scale,
-                    durations_bias=durations_bias,
-                    pitch=pitch,
-                    pitch_scale=pitch_scale,
-                    pitch_bias=pitch_bias,
-                    energy=energy,
-                    energy_scale=energy_scale,
-                    energy_bias=energy_bias,
-                    robot=robot,
-                    spk_emb=None,
-                    spk_id=self.spk_id
-                    )
+                if self.acousticModel == "fastspeech2":
+                    mel = fastspeech2_inference(
+                        phone_ids,
+                        speech=speech,
+                        durations=durations,
+                        durations_scale=durations_scale,
+                        durations_bias=durations_bias,
+                        pitch=pitch,
+                        pitch_scale=pitch_scale,
+                        pitch_bias=pitch_bias,
+                        energy=energy,
+                        energy_scale=energy_scale,
+                        energy_bias=energy_bias,
+                        robot=robot,
+                        spk_emb=None,
+                        spk_id=self.spk_id
+                        )
+                elif self.acousticModel == "speedyspeech":
+                    tone_ids = paddle.to_tensor(input_ids["tone_ids"][0])
+                    mel = speedyspeech_inference(
+                        phone_ids,
+                        tone_ids,
+                        spk_id=self.spk_id
+                        )
                 print("mel infer done")
                 self.wav = vocoder_inference(mel)
                 print("vocoder infer done")
@@ -441,11 +505,11 @@ class App(QMainWindow):
 
     def onVoiceComboboxChanged(self, text):
         if text == "阿梓":
-            self.spk_id = 175
+            self.spk_id = 0
         elif text == "老菊":
-            self.spk_id = 176
+            self.spk_id = 0
         elif text == "海子姐":
-            self.spk_id = 177
+            self.spk_id = 1
 
     def onTTSStyleComboboxChanged(self, text):
         if text == "正常":

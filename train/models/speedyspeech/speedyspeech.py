@@ -14,7 +14,7 @@
 import numpy as np
 import paddle
 from paddle import nn
-
+import paddle.nn.functional as F
 from paddlespeech.t2s.modules.positional_encoding import sinusoid_position_encoding
 
 
@@ -173,7 +173,9 @@ class SpeedySpeech(nn.Layer):
             decoder_dilations,
             tone_size=None, 
             spk_num: int=None,
-            spk_embed_dim: int=None,):
+            spk_embed_dim: int=None,
+            spk_embed_integration_type: str="add",
+            ):
         super().__init__()
         encoder = SpeedySpeechEncoder(vocab_size, tone_size,
                                       encoder_hidden_size, encoder_kernel_size,
@@ -186,11 +188,24 @@ class SpeedySpeech(nn.Layer):
         self.duration_predictor = duration_predictor
         self.decoder = decoder
         self.spk_embed_dim = spk_embed_dim
+        # use idx 0 as padding idx
+        self.padding_idx = 0
+
+        if self.spk_embed_dim is not None:
+            self.spk_embed_integration_type = spk_embed_integration_type
         if spk_num and self.spk_embed_dim:
             self.spk_embedding_table = nn.Embedding(
                 num_embeddings=spk_num,
                 embedding_dim=self.spk_embed_dim,
                 padding_idx=self.padding_idx)
+        self.encoder_hidden_size = encoder_hidden_size
+        # define additional projection for speaker embedding
+        if self.spk_embed_dim is not None:
+            if self.spk_embed_integration_type == "add":
+                self.spk_projection = nn.Linear(self.spk_embed_dim, self.encoder_hidden_size)
+            else:
+                self.spk_projection = nn.Linear(self.encoder_hidden_size + self.spk_embed_dim, self.encoder_hidden_size)
+
 
     def forward(self, text, tones, durations, spk_id: paddle.Tensor=None):
         # input of embedding must be int64
@@ -202,6 +217,7 @@ class SpeedySpeech(nn.Layer):
         encodings = self.encoder(text, tones)
         # (B, T)
 
+        print("temp,spk_embed_dim", self.spk_embed_dim)
         if self.spk_embed_dim is not None:
             if spk_id is not None:
                 spk_emb = self.spk_embedding_table(spk_id)
@@ -220,7 +236,7 @@ class SpeedySpeech(nn.Layer):
         decoded = self.decoder(encodings)
         return decoded, pred_durations
 
-    def inference(self, text, tones=None):
+    def inference(self, text, tones=None, spk_id=None,):
         # text: [T]
         # tones: [T]
         # input of embedding must be int64
@@ -231,6 +247,12 @@ class SpeedySpeech(nn.Layer):
             tones = tones.unsqueeze(0)
 
         encodings = self.encoder(text, tones)
+        print("temp,spk_embed_dim", self.spk_embed_dim)
+        if self.spk_embed_dim is not None:
+            if spk_id is not None:
+                spk_emb = self.spk_embedding_table(spk_id)
+                encodings = self._integrate_with_spk_embed(encodings, spk_emb)
+
         pred_durations = self.duration_predictor(encodings)  # (1, T)
         durations_to_expand = paddle.round(pred_durations.exp())
         durations_to_expand = (durations_to_expand).astype(paddle.int64)
@@ -256,6 +278,34 @@ class SpeedySpeech(nn.Layer):
         decoded = self.decoder(encodings)
         return decoded[0]
 
+    def _integrate_with_spk_embed(self, hs, spk_emb):
+        """Integrate speaker embedding with hidden states.
+
+        Parameters
+        ----------
+        hs : Tensor
+            Batch of hidden state sequences (B, Tmax, adim).
+        spk_emb : Tensor
+            Batch of speaker embeddings (B, spk_embed_dim).
+
+        Returns
+        ----------
+        Tensor
+            Batch of integrated hidden state sequences (B, Tmax, adim)
+        """
+        if self.spk_embed_integration_type == "add":
+            # apply projection and then add to hidden states
+            spk_emb = self.spk_projection(F.normalize(spk_emb))
+            hs = hs + spk_emb.unsqueeze(1)
+        elif self.spk_embed_integration_type == "concat":
+            # concat hidden states with spk embeds and then apply projection
+            spk_emb = F.normalize(spk_emb).unsqueeze(1).expand(
+                shape=[-1, hs.shape[1], -1])
+            hs = self.spk_projection(paddle.concat([hs, spk_emb], axis=-1))
+        else:
+            raise NotImplementedError("support only add or concat.")
+
+        return hs
 
 class SpeedySpeechInference(nn.Layer):
     def __init__(self, normalizer, speedyspeech_model):
@@ -263,7 +313,7 @@ class SpeedySpeechInference(nn.Layer):
         self.normalizer = normalizer
         self.acoustic_model = speedyspeech_model
 
-    def forward(self, phones, tones):
-        normalized_mel = self.acoustic_model.inference(phones, tones)
+    def forward(self, phones, tones, spk_id=None):
+        normalized_mel = self.acoustic_model.inference(phones, tones, spk_id)
         logmel = self.normalizer.inverse(normalized_mel)
         return logmel
