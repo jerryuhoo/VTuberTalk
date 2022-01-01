@@ -105,7 +105,7 @@ class SpeedySpeechEncoder(nn.Layer):
             padding_idx=0,
             tone_padding_idx=0)
         
-        if self.spk_num:
+        if spk_num:
             self.spk_emb = nn.Embedding(
                 num_embeddings=spk_num,
                 embedding_dim=hidden_size,
