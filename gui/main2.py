@@ -118,36 +118,56 @@ class App(QMainWindow):
         self.tts_speed_combo.resize(120, 40)
         self.tts_speed_combo.activated[str].connect(self.onTTSSpeedComboboxChanged)
 
+        #  acoustic model
+        self.acoustic_model_label = QLabel(self)
+        self.acoustic_model_label.move(160, 200)
+        self.acoustic_model_label.setText("模型：")
+
+        self.acoustic_model_combo = QComboBox(self)
+        self.acoustic_model_combo.addItem("gst-fastspeech2")
+        self.acoustic_model_combo.addItem("fastspeech2")
+        self.acoustic_model_combo.addItem("gst-speedyspeech")
+        self.acoustic_model_combo.addItem("speedyspeech")
+
+        self.acoustic_model_combo.move(240, 200)
+        self.acoustic_model_combo.resize(120, 40)
+        self.acoustic_model_combo.activated[str].connect(self.onAcousticModelComboboxChanged)
+
+        # # model path
+        # self.ref_audio_button = QPushButton('加载模型路径', self)
+        # self.ref_audio_button.move(20, 200)
+        # self.ref_audio_button.clicked.connect(self.loadRefWavFile)
+
         # vocoder model
         self.voc_model_label = QLabel(self)
-        self.voc_model_label.move(160, 200)
+        self.voc_model_label.move(160, 240)
         self.voc_model_label.setText("vocoder：")
 
         self.voc_model_combo = QComboBox(self)
         self.voc_model_combo.addItem("parallel wavegan")
         self.voc_model_combo.addItem("hifigan")
 
-        self.voc_model_combo.move(240, 200)
+        self.voc_model_combo.move(240, 240)
         self.voc_model_combo.resize(120, 40)
         self.voc_model_combo.activated[str].connect(self.onVocModelComboboxChanged)
 
         # ref audio
         self.ref_audio_button = QPushButton('参考音频', self)
-        self.ref_audio_button.move(20, 200)
+        self.ref_audio_button.move(20, 240)
         self.ref_audio_button.clicked.connect(self.loadRefWavFile)
 
         self.ref_audio_label = QLabel(self)
-        self.ref_audio_label.move(160, 240)
+        self.ref_audio_label.move(160, 280)
         self.ref_audio_label.resize(380, 40)
         self.ref_audio_label.setText("未加载参考音频")
         self.ref_audio_path = ""
 
         # use gst button
-        self.use_gst_button = QCheckBox("使用gst参考音频", self)
-        self.use_gst_button.setChecked(True)
-        self.use_gst_button.toggled.connect(self.onClickedGST)
-        self.use_gst_button.move(20, 240)
-        self.use_gst_button.resize(160, 40)
+        # self.use_gst_button = QCheckBox("使用gst参考音频", self)
+        # self.use_gst_button.setChecked(True)
+        # self.use_gst_button.toggled.connect(self.onClickedGST)
+        # self.use_gst_button.move(20, 280)
+        # self.use_gst_button.resize(160, 40)
 
         self.show()
 
@@ -156,44 +176,38 @@ class App(QMainWindow):
         # parse args and config and redirect to train_sp
         
         self.fastspeech2_config_path = "../exp/fastspeech2_bili3_aishell3/default_multi.yaml"
-        self.fastspeech2_checkpoint_gst = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_28322.pdz"
+        self.fastspeech2_checkpoint_gst = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_149004.pdz"
         self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_165560.pdz"
         self.fastspeech2_stat = "../exp/fastspeech2_bili3_aishell3/speech_stats.npy"
         self.fastspeech2_pitch_stat = "../exp/fastspeech2_bili3_aishell3/pitch_stats.npy"
         self.fastspeech2_energy_stat = "../exp/fastspeech2_bili3_aishell3/energy_stats.npy"
-        # self.phones_dict = "../exp/fastspeech2_bili3_aishell3/phone_id_map.txt"
-        # self.speaker_dict="../exp/fastspeech2_bili3_aishell3/speaker_id_map.txt"
+        self.phones_dict = "../exp/fastspeech2_bili3_aishell3/phone_id_map.txt"
+        self.speaker_dict="../exp/fastspeech2_bili3_aishell3/speaker_id_map.txt"
 
         self.speedyspeech_config_path = "../exp/speedyspeech_bili2/default_multi.yaml"
-        self.speedyspeech_checkpoint = "../exp/speedyspeech_bili2/checkpoints/snapshot_iter_4466.pdz"
+        self.speedyspeech_checkpoint = "../exp/speedyspeech_bili2/checkpoints/snapshot_iter_40600.pdz"
         self.speedyspeech_stat = "../exp/speedyspeech_bili2/feats_stats.npy"
         self.tones_dict = "../exp/speedyspeech_bili2/tone_id_map.txt"
         self.phones_dict = "../exp/speedyspeech_bili2/phone_id_map.txt"
         self.speaker_dict="../exp/speedyspeech_bili2/speaker_id_map.txt"
-        # self.speedyspeech_config_path = "../exp/speedyspeech_ghost/default.yaml"
-        # self.speedyspeech_checkpoint = "../exp/speedyspeech_ghost/checkpoints/snapshot_iter_19800.pdz"
-        # self.speedyspeech_stat = "../exp/speedyspeech_ghost/feats_stats.npy"
-        # self.tones_dict = "../exp/speedyspeech_ghost/tone_id_map.txt"
-        # self.phones_dict = "../exp/speedyspeech_ghost/phone_id_map.txt"
-        # self.speaker_dict= None
 
         self.pwg_config_path = "../pretrained_models/pwg_aishell3_ckpt_0.5/default.yaml"
         self.pwg_checkpoint = "../pretrained_models/pwg_aishell3_ckpt_0.5/snapshot_iter_1000000.pdz" 
         self.pwg_stat = "../pretrained_models/pwg_aishell3_ckpt_0.5/feats_stats.npy"
 
         self.hifigan_config_path = "../pretrained_models/hifigan_aishell3/default.yaml"
-        self.hifigan_checkpoint = "../pretrained_models/hifigan_aishell3/snapshot_iter_260000.pdz" 
+        self.hifigan_checkpoint = "../pretrained_models/hifigan_aishell3/snapshot_iter_285000.pdz" 
         self.hifigan_stat = "../pretrained_models/hifigan_aishell3/feats_stats.npy"
 
         self.ngpu = 0
         self.style = "Normal"
         self.speed = "1.0xspeed"
         
-        self.spk_id = 0
+        self.spk_id = 0 # int(self.voice_combo.currentText)
         self.wav = None
-        self.use_gst = True
+        self.use_gst = False
         self.vocoder = "pwg"
-        self.acousticModel = "speedyspeech"
+        self.acoustic_model = "speedyspeech"
 
         if self.ngpu == 0:
             paddle.set_device("cpu")
@@ -211,6 +225,31 @@ class App(QMainWindow):
 
         self.voice_cloning = None
 
+        self.onVoiceComboboxChanged(self.voice_combo.currentText())
+        self.onTTSStyleComboboxChanged(self.tts_style_combo.currentText())
+        self.onTTSSpeedComboboxChanged(self.tts_speed_combo.currentText())
+        self.onAcousticModelComboboxChanged(self.acoustic_model_combo.currentText())
+        self.onVocModelComboboxChanged(self.voc_model_combo.currentText())
+        # self.loadAcousticModel()
+        # self.loadVocoderModel()
+        # self.loadFrontend()
+
+    def loadFrontend(self):
+        if self.acoustic_model == "fastspeech2":
+            self.frontend = Frontend(phone_vocab_path=self.phones_dict)
+        elif self.acoustic_model == "speedyspeech":
+            self.frontend = Frontend(phone_vocab_path=self.phones_dict, tone_vocab_path=self.tones_dict)
+        print("frontend done!")
+    
+    def loadAcousticModel(self):
+        # acoustic model
+        if self.acoustic_model == "fastspeech2":
+            self.phones_dict = "../exp/fastspeech2_bili3_aishell3/phone_id_map.txt"
+            self.speaker_dict="../exp/fastspeech2_bili3_aishell3/speaker_id_map.txt"
+        elif self.acoustic_model == "speedyspeech":
+            self.phones_dict = "../exp/speedyspeech_bili2/phone_id_map.txt"
+            self.speaker_dict="../exp/speedyspeech_bili2/speaker_id_map.txt"
+
         fields = ["utt_id", "text"]
         self.spk_num = None
         if self.speaker_dict:
@@ -226,23 +265,12 @@ class App(QMainWindow):
             print("single speaker")
         print("spk_num:", self.spk_num)
 
-        self.loadAcousticModel()
-        self.loadVocoderModel()
-        
-        if self.acousticModel == "fastspeech2":
-            self.frontend = Frontend(phone_vocab_path=self.phones_dict)
-        elif self.acousticModel == "speedyspeech":
-            self.frontend = Frontend(phone_vocab_path=self.phones_dict, tone_vocab_path=self.tones_dict)
-        print("frontend done!") 
-    
-    def loadAcousticModel(self):
-        # acoustic model
         with open(self.phones_dict, "r", encoding='UTF-8') as f:
             phn_id = [line.strip().split() for line in f.readlines()]
         vocab_size = len(phn_id)
         print("vocab_size:", vocab_size)
 
-        if self.acousticModel == "fastspeech2":
+        if self.acoustic_model == "fastspeech2":
             print("fastspeech2")
             odim = self.fastspeech2_config.n_mels
             self.model = FastSpeech2(
@@ -255,21 +283,23 @@ class App(QMainWindow):
                     paddle.load(self.fastspeech2_checkpoint)["main_params"])
             self.model.eval()
             print("fastspeech2 model done!")
-        elif self.acousticModel == "speedyspeech":
+        elif self.acoustic_model == "speedyspeech":
             print("speedyspeech")
-            
             tone_size = None
             if self.tones_dict:
                 with open(self.tones_dict, "r") as f:
                     tone_id = [line.strip().split() for line in f.readlines()]
                 tone_size = len(tone_id)
                 print("tone_size:", tone_size)
+            if self.use_gst:
+                self.messageDialog("暂时不支持")
+                return
+            else:
+                self.model = SpeedySpeech(
+                    vocab_size=vocab_size, tone_size=tone_size, spk_num=self.spk_num, **self.speedyspeech_config["model"])
 
-            self.model = SpeedySpeech(
-                vocab_size=vocab_size, tone_size=tone_size, spk_num=self.spk_num, **self.speedyspeech_config["model"])
-
-            self.model.set_state_dict(
-                paddle.load(self.speedyspeech_checkpoint)["main_params"])
+                self.model.set_state_dict(
+                    paddle.load(self.speedyspeech_checkpoint)["main_params"])
             self.model.eval()
             print("speedyspeech model done!")
         
@@ -316,13 +346,13 @@ class App(QMainWindow):
         sentences = []
         sentences.append(("001", textboxValue))
 
-        if self.acousticModel == "fastspeech2":
+        if self.acoustic_model == "fastspeech2":
             stat = np.load(self.fastspeech2_stat)
             mu, std = stat
             mu = paddle.to_tensor(mu)
             std = paddle.to_tensor(std)
             fastspeech2_normalizer = ZScore(mu, std)
-        elif self.acousticModel == "speedyspeech":
+        elif self.acoustic_model == "speedyspeech":
             stat = np.load(self.speedyspeech_stat)
             mu, std = stat
             mu = paddle.to_tensor(mu)
@@ -338,12 +368,12 @@ class App(QMainWindow):
         std = paddle.to_tensor(std)
         vocoder_normalizer = ZScore(mu, std)
 
-        if self.acousticModel == "fastspeech2":
+        if self.acoustic_model == "fastspeech2":
             fastspeech2_inference = StyleFastSpeech2Inference(
                 fastspeech2_normalizer, self.model, self.fastspeech2_pitch_stat,
                 self.fastspeech2_energy_stat)
             fastspeech2_inference.eval()
-        elif self.acousticModel == "speedyspeech":
+        elif self.acoustic_model == "speedyspeech":
             speedyspeech_inference = SpeedySpeechInference(
                 speedyspeech_normalizer, self.model)
             speedyspeech_inference.eval()
@@ -365,18 +395,18 @@ class App(QMainWindow):
         energy_scale = None
         energy_bias = None
 
-        if self.tts_style_combo.currentText == "机器楞":
+        if self.tts_style_combo.currentText() == "机器楞":
             self.style = "robot"
-        elif self.tts_style_combo.currentText == "高音":
+        elif self.tts_style_combo.currentText() == "高音":
             self.style = "high_voice"
-        elif self.tts_style_combo.currentText == "低音":
+        elif self.tts_style_combo.currentText() == "低音":
             self.style = "low_voice"
 
-        if self.tts_speed_combo.currentText == "1.2x":
+        if self.tts_speed_combo.currentText() == "1.2x":
             self.speed = "1.2xspeed"
-        elif self.tts_speed_combo.currentText == "0.8x":
+        elif self.tts_speed_combo.currentText() == "0.8x":
             self.speed = "0.8xspeed"
-        elif self.tts_speed_combo.currentText == "古神":
+        elif self.tts_speed_combo.currentText() == "古神":
             self.speed = "3.0xspeed"
 
         if self.style == "robot":
@@ -430,10 +460,10 @@ class App(QMainWindow):
             speech = None
         
         for utt_id, sentence in sentences:
-            if self.acousticModel == "fastspeech2":
+            if self.acoustic_model == "fastspeech2":
                 input_ids = self.frontend.get_input_ids(
                     sentence, merge_sentences=True, robot=robot)
-            elif self.acousticModel == "speedyspeech":
+            elif self.acoustic_model == "speedyspeech":
                 input_ids = self.frontend.get_input_ids(
                 sentence, merge_sentences=True, get_tone_ids=True)
             try:
@@ -449,7 +479,7 @@ class App(QMainWindow):
             # self.spk_id = None # temp
 
             with paddle.no_grad():
-                if self.acousticModel == "fastspeech2":
+                if self.acoustic_model == "fastspeech2":
                     mel = fastspeech2_inference(
                         phone_ids,
                         speech=speech,
@@ -466,7 +496,7 @@ class App(QMainWindow):
                         spk_emb=None,
                         spk_id=self.spk_id
                         )
-                elif self.acousticModel == "speedyspeech":
+                elif self.acoustic_model == "speedyspeech":
                     tone_ids = paddle.to_tensor(input_ids["tone_ids"][0])
                     mel = speedyspeech_inference(
                         phone_ids,
@@ -516,11 +546,30 @@ class App(QMainWindow):
 
     def onVoiceComboboxChanged(self, text):
         if text == "阿梓":
-            self.spk_id = 0
+            if self.acoustic_model == "fastspeech2":
+                if self.use_gst:
+                    self.spk_id = 175
+                else:
+                    self.spk_id = 175
+            elif self.acoustic_model == "speedyspeech":
+                self.spk_id = 0
         elif text == "老菊":
-            self.spk_id = 0
+            if self.acoustic_model == "fastspeech2":
+                if self.use_gst:
+                    # self.messageDialog("暂时不支持")
+                    self.spk_id = 176
+                else:
+                    self.spk_id = 176
+            elif self.acoustic_model == "speedyspeech":
+                self.messageDialog("暂时不支持")
         elif text == "海子姐":
-            self.spk_id = 1
+            if self.acoustic_model == "fastspeech2":
+                if self.use_gst:
+                    self.spk_id = 177
+                else:
+                    self.spk_id = 177
+            elif self.acoustic_model == "speedyspeech":
+                self.spk_id = 1
 
     def onTTSStyleComboboxChanged(self, text):
         if text == "正常":
@@ -541,6 +590,23 @@ class App(QMainWindow):
             self.speed = "0.8xspeed"
         elif text == "古神":
             self.speed = "3.0xspeed"
+
+    def onAcousticModelComboboxChanged(self, text):
+        if text == "gst-fastspeech2":
+            self.acoustic_model = "fastspeech2"
+            self.use_gst = True
+        elif text == "fastspeech2":
+            self.acoustic_model = "fastspeech2"
+            self.use_gst = False
+        elif text == "gst-speedyspeech":
+            self.messageDialog("暂不支持")
+            return
+        elif text == "speedyspeech":
+            self.acoustic_model = "speedyspeech"
+            self.use_gst = False
+        self.onVoiceComboboxChanged(self.voice_combo.currentText())
+        self.loadAcousticModel()
+        self.loadFrontend()
 
     def onVocModelComboboxChanged(self, text):
         if text == "parallel wavegan":
@@ -565,12 +631,12 @@ class App(QMainWindow):
         msg_box = QMessageBox(QMessageBox.Warning, '错误', text)
         msg_box.exec_()
 
-    def onClickedGST(self):
-        if self.use_gst_button.isChecked():
-            self.use_gst = True
-        else:
-            self.use_gst = False
-        self.loadAcousticModel()
+    # def onClickedGST(self):
+    #     if self.use_gst_button.isChecked():
+    #         self.use_gst = True
+    #     else:
+    #         self.use_gst = False
+    #     self.loadAcousticModel()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
