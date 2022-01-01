@@ -169,7 +169,7 @@ if [ ${fastspeech2} == True ] && [ ${multiple} == False ]; then
             --phones-dict=dump/phone_id_map.txt || exit -1
     fi
 
-    if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 && [ ${gst} == True ]; then
+    if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4] && [ ${gst} == True ]; then
         echo "train"
         python train/exps/fastspeech2/train.py \
             --train-metadata=dump/train/norm/metadata.jsonl \
@@ -181,7 +181,7 @@ if [ ${fastspeech2} == True ] && [ ${multiple} == False ]; then
             --use_gst=True || exit -1
     fi
 
-    if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 && [ ${gst} == False ]; then
+    if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ] && [ ${gst} == False ]; then
         echo "train"
         python train/exps/fastspeech2/train.py \
             --train-metadata=dump/train/norm/metadata.jsonl \
@@ -190,5 +190,157 @@ if [ ${fastspeech2} == True ] && [ ${multiple} == False ]; then
             --output-dir=exp/$model_name \
             --ngpu=1 \
             --phones-dict=dump/phone_id_map.txt || exit -1
+    fi
+fi
+
+
+if [ ${fastspeech2} == False ] && [ ${multiple} == False ]; then
+    echo "model: speedyspeech, single"
+
+    if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
+        echo "duration"
+        python tools/gen_duration_from_textgrid.py \
+            --inputdir=data/TextGrid \
+            --output=data/durations.txt \
+            --config=train/conf/speedyspeech/default.yaml || exit -1
+    fi
+
+    if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
+        echo "preprocess"
+        python train/exps/speedyspeech/preprocess.py \
+            --dataset=other \
+            --rootdir=data/ \
+            --dumpdir=dump \
+            --dur-file=data/durations.txt \
+            --config=train/conf/speedyspeech/default.yaml \
+            --num-cpu=16 \
+            --cut-sil=True \
+            --use-relative-path=True || exit -1
+    fi
+
+    if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
+        echo "compute statistics"
+        python tools/compute_statistics.py \
+            --metadata=dump/train/raw/metadata.jsonl \
+            --field-name="feats" \
+            --use-relative-path=True || exit -1
+    fi
+
+    if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
+        echo "normalize"
+        python train/exps/speedyspeech/normalize.py \
+            --metadata=dump/train/raw/metadata.jsonl \
+            --dumpdir=dump/train/norm \
+            --stats=dump/train/feats_stats.npy \
+            --phones-dict=dump/phone_id_map.txt \
+            --tones-dict=dump/tone_id_map.txt \
+            --use-relative-path=True || exit -1
+
+        python train/exps/speedyspeech/normalize.py \
+            --metadata=dump/dev/raw/metadata.jsonl \
+            --dumpdir=dump/dev/norm \
+            --stats=dump/train/feats_stats.npy \
+            --phones-dict=dump/phone_id_map.txt \
+            --tones-dict=dump/tone_id_map.txt \
+            --use-relative-path=True || exit -1
+
+        python train/exps/speedyspeech/normalize.py \
+            --metadata=dump/test/raw/metadata.jsonl \
+            --dumpdir=dump/test/norm \
+            --stats=dump/train/feats_stats.npy \
+            --phones-dict=dump/phone_id_map.txt \
+            --tones-dict=dump/tone_id_map.txt \
+            --use-relative-path=True || exit -1
+    fi
+
+    if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ] && [ ${gst} == False ]; then
+        echo "train"
+        python train/exps/speedyspeech/train.py \
+            --train-metadata=dump/train/norm/metadata.jsonl \
+            --dev-metadata=dump/dev/norm/metadata.jsonl \
+            --config=train/conf/speedyspeech/default.yaml \
+            --output-dir=exp/$model_name \
+            --ngpu=1 \
+            --phones-dict=dump/phone_id_map.txt \
+            --tones-dict=dump/tone_id_map.txt \
+            --use-relative-path=True || exit -1
+    fi
+fi
+
+
+if [ ${fastspeech2} == False ] && [ ${multiple} == True ]; then
+    echo "model: speedyspeech, multiple"
+
+    if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
+        echo "duration"
+        python tools/gen_duration_from_textgrid.py \
+            --inputdir=data/TextGrid \
+            --output=data/durations.txt \
+            --config=train/conf/speedyspeech/default_multi.yaml || exit -1
+    fi
+
+    if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
+        echo "preprocess"
+        python train/exps/speedyspeech/preprocess.py \
+            --dataset=other \
+            --rootdir=data/ \
+            --dumpdir=dump \
+            --dur-file=data/durations.txt \
+            --config=train/conf/speedyspeech/default_multi.yaml \
+            --num-cpu=16 \
+            --cut-sil=True \
+            --use-relative-path=True || exit -1
+    fi
+
+    if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
+        echo "compute statistics"
+        python tools/compute_statistics.py \
+            --metadata=dump/train/raw/metadata.jsonl \
+            --field-name="feats" \
+            --use-relative-path=True|| exit -1
+    fi
+
+    if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
+        echo "normalize"
+        python train/exps/speedyspeech/normalize.py \
+            --metadata=dump/train/raw/metadata.jsonl \
+            --dumpdir=dump/train/norm \
+            --stats=dump/train/feats_stats.npy \
+            --phones-dict=dump/phone_id_map.txt \
+            --tones-dict=dump/tone_id_map.txt \
+            --speaker-dict=dump/speaker_id_map.txt \
+            --use-relative-path=True || exit -1
+
+        python train/exps/speedyspeech/normalize.py \
+            --metadata=dump/dev/raw/metadata.jsonl \
+            --dumpdir=dump/dev/norm \
+            --stats=dump/train/feats_stats.npy \
+            --phones-dict=dump/phone_id_map.txt \
+            --tones-dict=dump/tone_id_map.txt \
+            --speaker-dict=dump/speaker_id_map.txt \
+            --use-relative-path=True || exit -1
+
+        python train/exps/speedyspeech/normalize.py \
+            --metadata=dump/test/raw/metadata.jsonl \
+            --dumpdir=dump/test/norm \
+            --stats=dump/train/feats_stats.npy \
+            --phones-dict=dump/phone_id_map.txt \
+            --tones-dict=dump/tone_id_map.txt \
+            --speaker-dict=dump/speaker_id_map.txt \
+            --use-relative-path=True || exit -1
+    fi
+
+    if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ] && [ ${gst} == False ]; then
+        echo "train"
+        python train/exps/speedyspeech/train.py \
+            --train-metadata=dump/train/norm/metadata.jsonl \
+            --dev-metadata=dump/dev/norm/metadata.jsonl \
+            --config=train/conf/speedyspeech/default_multi.yaml \
+            --output-dir=exp/$model_name \
+            --ngpu=1 \
+            --phones-dict=dump/phone_id_map.txt \
+            --tones-dict=dump/tone_id_map.txt \
+            --speaker-dict=dump/speaker_id_map.txt \
+            --use-relative-path=True || exit -1
     fi
 fi
