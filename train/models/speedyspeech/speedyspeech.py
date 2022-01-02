@@ -125,9 +125,10 @@ class SpeedySpeechEncoder(nn.Layer):
             nn.BatchNorm1D(hidden_size, data_format="NLC"),
             nn.Linear(hidden_size, hidden_size), )
 
-    def forward(self, text, tones, spk_id):
+    def forward(self, text, tones, spk_id=None):
         embedding = self.embedding(text, tones)
-        embedding += self.spk_emb(spk_id).unsqueeze(1)
+        if spk_id:
+            embedding += self.spk_emb(spk_id).unsqueeze(1)
         embedding = self.prenet(embedding)
         x = self.res_blocks(embedding)
         x = embedding + self.postnet1(x)
