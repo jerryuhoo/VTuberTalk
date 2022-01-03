@@ -8,7 +8,7 @@ def process(args):
     for file in files:
         sound = AudioSegment.from_wav(os.path.join(args.path, file))
         sound = sound.set_channels(1)
-        sound = sound.set_frame_rate(args.sr)
+        sound = sound.set_frame_rate(int(args.sr))
         sound.export(os.path.join(args.path, file), format="wav")
 
 if __name__ == '__main__':
@@ -17,5 +17,3 @@ if __name__ == '__main__':
     parser.add_argument("--sr", type=str, default=16000)
     args = parser.parse_args()
     process(args)
-
-
