@@ -20,7 +20,6 @@ def process(path):
         if os.path.isdir(os.path.join(path, filename)):
             continue
         filename_suffix = os.path.splitext(filename)[1]
-        print(filename)
         input_file_path = os.path.join(path, filename)
         output_file_path = os.path.join(path, os.path.splitext(filename)[0] + ".lab")
         if filename_suffix == '.txt':
@@ -36,7 +35,7 @@ def process(path):
                     for pinyin in pinyins:
                         f1.write("%s " % pinyin)
             f1.close()
-            print("write to " + output_file_path)
+            # print("write to " + output_file_path)
         else:
             # print("file ", filename, " format not supported!")
             continue

@@ -17,7 +17,7 @@ def process(args, outdir):
     path=args.path
     files=os.listdir(path)
     files = sorted_alphanumeric(files)
-    count = [0] * 200
+    count = [0] * 600
     for file in files:
         if file.endswith('.txt'):
             pass

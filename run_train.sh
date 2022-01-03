@@ -234,6 +234,7 @@ if [ ${fastspeech2} == False ] && [ ${multiple} == False ]; then
             --stats=dump/train/feats_stats.npy \
             --phones-dict=dump/phone_id_map.txt \
             --tones-dict=dump/tone_id_map.txt \
+            --speaker-dict=dump/speaker_id_map.txt \
             --use-relative-path=True || exit -1
 
         python train/exps/speedyspeech/normalize.py \
@@ -242,6 +243,7 @@ if [ ${fastspeech2} == False ] && [ ${multiple} == False ]; then
             --stats=dump/train/feats_stats.npy \
             --phones-dict=dump/phone_id_map.txt \
             --tones-dict=dump/tone_id_map.txt \
+            --speaker-dict=dump/speaker_id_map.txt \
             --use-relative-path=True || exit -1
 
         python train/exps/speedyspeech/normalize.py \
@@ -250,6 +252,7 @@ if [ ${fastspeech2} == False ] && [ ${multiple} == False ]; then
             --stats=dump/train/feats_stats.npy \
             --phones-dict=dump/phone_id_map.txt \
             --tones-dict=dump/tone_id_map.txt \
+            --speaker-dict=dump/speaker_id_map.txt \
             --use-relative-path=True || exit -1
     fi
 
