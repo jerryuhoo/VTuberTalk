@@ -1,15 +1,15 @@
 set -e
 
-speaker=nanami
+speaker=azi
 cut_minute=10
 sample_rate=32000
 ag=3
 min_text=2
 max_text=60
-use_spleeter=False
+use_spleeter=True
 
 stage=0
-stop_stage=6
+stop_stage=7
 
 if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
     # cut video
@@ -25,7 +25,7 @@ if [ ${use_spleeter} == True ]; then
     if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
         # spleeter
         echo "spleeter"
-        spleeter separate -o data/wav_temp/$speaker/clean_raw data/wav_temp/$speaker/raw/*.wav || exit -1
+        spleeter separate -o data/wav_temp/$speaker/clean_raw -p spleeter:2stems-16kHz data/wav_temp/$speaker/raw/*.wav || exit -1
     fi
 
     if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
@@ -33,7 +33,7 @@ if [ ${use_spleeter} == True ]; then
         echo "glob spleeter vocals"
         python tools/glob_spleeter_vocals.py --path data/wav_temp/$speaker/clean_raw/ || exit -1
         rm -rf data/wav_temp/$speaker/clean_raw/ || exit -1
-        python tools/audio_to_mono.py --path data/wav_temp/$speaker/clean_raw2/ || exit -1
+        python tools/audio_to_mono.py --path data/wav_temp/$speaker/clean_raw2/ --sr $sample_rate || exit -1
         mv data/wav_temp/$speaker/clean_raw2/ data/wav_temp/$speaker/raw/ || exit -1
     fi
 fi

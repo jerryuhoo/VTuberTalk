@@ -7,7 +7,8 @@ def move(root_path, file_name, output_path):
     wav_file = os.path.splitext(file_name)[0] + '.wav'
     lab_file = os.path.splitext(file_name)[0] + '.lab'
     os.replace(os.path.join(root_path, wav_file), os.path.join(output_path, wav_file))
-    os.replace(os.path.join(root_path, lab_file), os.path.join(output_path, lab_file))
+    if os.path.exists(os.path.join(root_path, lab_file)):
+        os.replace(os.path.join(root_path, lab_file), os.path.join(output_path, lab_file))
 
 def process(files, path):
     text_dict = {}
