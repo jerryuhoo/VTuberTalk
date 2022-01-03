@@ -1,6 +1,6 @@
 set -e
 
-speaker=azi
+speaker=nanami
 cut_minute=10
 sample_rate=32000
 ag=3
@@ -8,7 +8,7 @@ min_text=2
 max_text=60
 use_spleeter=False
 
-stage=5
+stage=0
 stop_stage=6
 
 if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
@@ -42,6 +42,7 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
     # split
     echo "split"
     python tools/split_audio.py --ag $ag --in_path data/wav_temp/$speaker/raw/ || exit -1
+    rm -rf data/wav_temp/$speaker/raw/ || exit -1
 fi
 
 if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
@@ -61,6 +62,8 @@ if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
     python tools/glob_text.py --path data/wav_temp/$speaker/split/ || exit -1
     echo "data filter"
     python tools/data_filter.py --path data/wav_temp/$speaker/split/ --min $min_text --max $max_text || exit -1
+    echo "revise text"
+    python tools/revise_text.py --path data/wav_temp/$speaker/split/
 fi
 
 if [ ${stage} -le 6 ] && [ ${stop_stage} -ge 6 ]; then
