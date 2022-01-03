@@ -110,6 +110,8 @@ class SpeedySpeechEncoder(nn.Layer):
                 num_embeddings=spk_num,
                 embedding_dim=hidden_size,
                 padding_idx=0)
+        else:
+            self.spk_emb = None
                 
         self.prenet = nn.Sequential(
             nn.Linear(hidden_size, hidden_size),
@@ -127,7 +129,7 @@ class SpeedySpeechEncoder(nn.Layer):
 
     def forward(self, text, tones, spk_id=None):
         embedding = self.embedding(text, tones)
-        if spk_id:
+        if self.spk_emb:
             embedding += self.spk_emb(spk_id).unsqueeze(1)
         embedding = self.prenet(embedding)
         x = self.res_blocks(embedding)
