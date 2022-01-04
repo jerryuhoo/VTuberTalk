@@ -32,9 +32,13 @@ if [ ${use_spleeter} == True ]; then
         # glob spleeter vocals
         echo "glob spleeter vocals"
         python tools/glob_spleeter_vocals.py --path data/wav_temp/$speaker/clean_raw/ || exit -1
+        echo "remove clean_raw"
         rm -rf data/wav_temp/$speaker/clean_raw/ || exit -1
+        echo "convert clean_raw2 to mono"
         python tools/audio_to_mono.py --path data/wav_temp/$speaker/clean_raw2/ --sr $sample_rate || exit -1
+        echo "remove raw"
         rm -rf data/wav_temp/$speaker/raw/ || exit -1
+        echo "rename clean_raw2 to raw"
         mv data/wav_temp/$speaker/clean_raw2/ data/wav_temp/$speaker/raw/ || exit -1
     fi
 fi
@@ -44,6 +48,8 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
     echo "split"
     python tools/split_audio.py --ag $ag --in_path data/wav_temp/$speaker/raw/ || exit -1
     rm -rf data/wav_temp/$speaker/raw/ || exit -1
+    echo "normalize volume"
+    python tools/change_sr.py --path data/wav_temp/$speaker/split/ --sr $sample_rate --normalize 0.8 || exit -1
 fi
 
 if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
