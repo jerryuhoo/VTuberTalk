@@ -34,6 +34,7 @@ if [ ${use_spleeter} == True ]; then
         python tools/glob_spleeter_vocals.py --path data/wav_temp/$speaker/clean_raw/ || exit -1
         rm -rf data/wav_temp/$speaker/clean_raw/ || exit -1
         python tools/audio_to_mono.py --path data/wav_temp/$speaker/clean_raw2/ --sr $sample_rate || exit -1
+        rm -rf data/wav_temp/$speaker/raw/ || exit -1
         mv data/wav_temp/$speaker/clean_raw2/ data/wav_temp/$speaker/raw/ || exit -1
     fi
 fi
