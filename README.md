@@ -547,6 +547,9 @@ python main2.py
 
 ## 6. TODO list
 
-* 优化ASR流程，目前batch size = 1，速度慢。
-* spleeter降噪。
-* preprocess优化，不需要重复处理数据集。
+- [x] 添加GST模块。
+- [x] spleeter降噪。
+- [ ] 优化ASR流程，目前batch size = 1，速度慢。
+- [ ] preprocess优化，不需要重复处理数据集。
+- [ ] 小规模数据集训练
+- [ ] VAE情感控制
