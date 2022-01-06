@@ -20,7 +20,7 @@ def process(files, path):
     for file in files:
         if not file.endswith('.txt'):
             continue
-        position = path + file
+        position = os.path.join(path, file)
         with open(position ,'r') as f:
             ori_text = ""
             for line in f.readlines():
