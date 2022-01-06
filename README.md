@@ -4,6 +4,9 @@
 
 这是一个根据VTuber的声音训练而成的TTS（text-to-speech）模型，输入文本和VTuber可以输出对应的语音。本项目基于[百度PaddleSpeech](https://github.com/PaddlePaddle/PaddleSpeech)。
 
+Demo视频：
+<div align="center"><a href="https://www.bilibili.com/video/BV1Wa41167fX"><img src="https://i1.hdslb.com/bfs/archive/78f4321b480694bcb00b9f542c828ab66b3b4ee9.jpg@640w_400h_100Q_1c.webp" / width="500px"></a></div>
+
 ## 1. 环境安装 && 准备
 
 python >= 3.8
