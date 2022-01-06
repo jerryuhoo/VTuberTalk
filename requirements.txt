@@ -1,0 +1,9 @@
+paddlepaddle-gpu
+paddlespeech
+pydub
+spleeter==2.3.0
+PyQt5
+sounddevice
+jsonlines
+yacs
+numpy==1.20.0
