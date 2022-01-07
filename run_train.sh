@@ -5,7 +5,8 @@ stop_stage=100
 model_name=gst_fastspeech2_azi_nanami
 fastspeech2=True
 multiple=True
-gst=True
+use_gst=False
+use_vae=True
 
 if [ ${fastspeech2} == True ] && [ ${multiple} == True ]; then
     echo "model: fastspeech2, multiple"
@@ -75,7 +76,7 @@ if [ ${fastspeech2} == True ] && [ ${multiple} == True ]; then
             --speaker-dict=dump/speaker_id_map.txt || exit -1
     fi
 
-    if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ] && [ ${gst} == True ]; then
+    if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
         echo "train"
         python train/exps/fastspeech2/train.py \
             --train-metadata=dump/train/norm/metadata.jsonl \
@@ -85,20 +86,7 @@ if [ ${fastspeech2} == True ] && [ ${multiple} == True ]; then
             --ngpu=1 \
             --phones-dict=dump/phone_id_map.txt \
             --speaker-dict=dump/speaker_id_map.txt \
-            --use_gst=True || exit -1
-    fi
-
-    if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ] && [ ${gst} == False ]; then
-        echo "train"
-        python train/exps/fastspeech2/train.py \
-            --train-metadata=dump/train/norm/metadata.jsonl \
-            --dev-metadata=dump/dev/norm/metadata.jsonl \
-            --config=train/conf/fastspeech2/default_multi.yaml \
-            --output-dir=exp/$model_name \
-            --ngpu=1 \
-            --phones-dict=dump/phone_id_map.txt \
-            --speaker-dict=dump/speaker_id_map.txt \
-            --use_gst=False || exit -1
+            --use_gst=$use_gst || exit -1
     fi
 fi
 
@@ -169,7 +157,7 @@ if [ ${fastspeech2} == True ] && [ ${multiple} == False ]; then
             --phones-dict=dump/phone_id_map.txt || exit -1
     fi
 
-    if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4] && [ ${gst} == True ]; then
+    if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4]; then
         echo "train"
         python train/exps/fastspeech2/train.py \
             --train-metadata=dump/train/norm/metadata.jsonl \
@@ -178,18 +166,7 @@ if [ ${fastspeech2} == True ] && [ ${multiple} == False ]; then
             --output-dir=exp/$model_name \
             --ngpu=1 \
             --phones-dict=dump/phone_id_map.txt \
-            --use_gst=True || exit -1
-    fi
-
-    if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ] && [ ${gst} == False ]; then
-        echo "train"
-        python train/exps/fastspeech2/train.py \
-            --train-metadata=dump/train/norm/metadata.jsonl \
-            --dev-metadata=dump/dev/norm/metadata.jsonl \
-            --config=train/conf/fastspeech2/default_multi.yaml \
-            --output-dir=exp/$model_name \
-            --ngpu=1 \
-            --phones-dict=dump/phone_id_map.txt || exit -1
+            --use_gst=$use_gst || exit -1
     fi
 fi
 
