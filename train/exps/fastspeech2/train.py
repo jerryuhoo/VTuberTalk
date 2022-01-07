@@ -34,9 +34,10 @@ from paddlespeech.t2s.datasets.data_table import DataTable
 import sys
 sys.path.append("train/models")
 from fastspeech2 import FastSpeech2
-
-from paddlespeech.t2s.models.fastspeech2 import FastSpeech2Evaluator
-from paddlespeech.t2s.models.fastspeech2 import FastSpeech2Updater
+from fastspeech2 import FastSpeech2Evaluator
+from fastspeech2 import FastSpeech2Updater
+# from paddlespeech.t2s.models.fastspeech2 import FastSpeech2Evaluator
+# from paddlespeech.t2s.models.fastspeech2 import FastSpeech2Updater
 from paddlespeech.t2s.training.extensions.snapshot import Snapshot
 from paddlespeech.t2s.training.extensions.visualizer import VisualDL
 from paddlespeech.t2s.training.optimizer import build_optimizers
@@ -133,7 +134,7 @@ def train_sp(args, config):
 
     odim = config.n_mels
     model = FastSpeech2(
-        idim=vocab_size, odim=odim, spk_num=spk_num, **config["model"], use_gst=args.use_gst)
+        idim=vocab_size, odim=odim, spk_num=spk_num, **config["model"], use_gst=args.use_gst, use_vae=args.use_vae)
     if world_size > 1:
         model = DataParallel(model)
     print("model done!")
@@ -201,7 +202,13 @@ def main():
         type=str2bool,
         default=False,
         help="whether training gst.")
-
+    
+    parser.add_argument(
+        "--use_vae",
+        type=str2bool,
+        default=False,
+        help="whether training vae.")
+    
     args = parser.parse_args()
 
     with open(args.config) as f:

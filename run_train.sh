@@ -2,7 +2,7 @@ set -e
 
 stage=0
 stop_stage=100
-model_name=gst_fastspeech2_azi_nanami
+model_name=vae_fastspeech2_azi_nanami
 fastspeech2=True
 multiple=True
 use_gst=False
@@ -86,7 +86,8 @@ if [ ${fastspeech2} == True ] && [ ${multiple} == True ]; then
             --ngpu=1 \
             --phones-dict=dump/phone_id_map.txt \
             --speaker-dict=dump/speaker_id_map.txt \
-            --use_gst=$use_gst || exit -1
+            --use_gst=$use_gst \
+            --use_vae=$use_vae || exit -1
     fi
 fi
 
@@ -166,7 +167,8 @@ if [ ${fastspeech2} == True ] && [ ${multiple} == False ]; then
             --output-dir=exp/$model_name \
             --ngpu=1 \
             --phones-dict=dump/phone_id_map.txt \
-            --use_gst=$use_gst || exit -1
+            --use_gst=$use_gst \
+            --use_vae=$use_vae || exit -1
     fi
 fi
 

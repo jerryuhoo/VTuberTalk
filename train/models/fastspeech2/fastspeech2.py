@@ -13,6 +13,7 @@
 # limitations under the License.
 # Modified from espnet(https://github.com/espnet/espnet)
 """Fastspeech2 related modules for paddle"""
+from logging import log
 from typing import Dict
 from typing import Sequence
 from typing import Tuple
@@ -34,7 +35,10 @@ from paddlespeech.t2s.modules.predictor.variance_predictor import VariancePredic
 from paddlespeech.t2s.modules.tacotron2.decoder import Postnet
 from paddlespeech.t2s.modules.transformer.encoder import ConformerEncoder
 from paddlespeech.t2s.modules.transformer.encoder import TransformerEncoder
-from paddlespeech.t2s.modules.style_encoder import StyleEncoder
+# from paddlespeech.t2s.modules.style_encoder import StyleEncoder
+import sys
+sys.path.append("train/modules")
+from style_encoder import VAE, StyleEncoder
 
 class FastSpeech2(nn.Layer):
     """FastSpeech2 module.
@@ -132,6 +136,15 @@ class FastSpeech2(nn.Layer):
             gst_conv_stride: int=2,
             gst_gru_layers: int=1,
             gst_gru_units: int=128,
+            # vae emb
+            use_vae: bool=False,
+            vae_conv_layers: int=6,
+            vae_conv_chans_list: Sequence[int]=(32, 32, 64, 64, 128, 128),
+            vae_conv_kernel_size: int=3,
+            vae_conv_stride: int=2,
+            vae_gru_layers: int=1,
+            vae_gru_units: int=128,
+            vae_z_latent_dim: int=32,
             # training related
             init_type: str="xavier_uniform",
             init_enc_alpha: float=1.0,
@@ -310,6 +323,7 @@ class FastSpeech2(nn.Layer):
             self.tone_embed_integration_type = tone_embed_integration_type
         
         self.use_gst = use_gst
+        self.use_vae = use_vae
 
         # use idx 0 as padding idx
         self.padding_idx = 0
@@ -395,6 +409,20 @@ class FastSpeech2(nn.Layer):
                 conv_stride=gst_conv_stride,
                 gru_layers=gst_gru_layers,
                 gru_units=gst_gru_units, )
+
+        # define vae
+        if self.use_vae:
+            print("use vae")
+            self.vae = VAE(
+                idim=odim,  # the input is mel-spectrogram
+                vae_token_dim=adim,
+                conv_layers=vae_conv_layers,
+                conv_chans_list=vae_conv_chans_list,
+                conv_kernel_size=vae_conv_kernel_size,
+                conv_stride=vae_conv_stride,
+                gru_layers=vae_gru_layers,
+                gru_units=vae_gru_units, 
+                z_latent_dim=vae_z_latent_dim)
 
         # define additional projection for speaker embedding
         if self.spk_embed_dim is not None:
@@ -588,7 +616,7 @@ class FastSpeech2(nn.Layer):
         if tone_id is not None:
             tone_id = paddle.cast(tone_id, 'int64')
         # forward propagation
-        before_outs, after_outs, d_outs, p_outs, e_outs = self._forward(
+        before_outs, after_outs, d_outs, p_outs, e_outs, mu, logvar, z = self._forward(
             xs,
             ilens,
             ys,
@@ -607,7 +635,7 @@ class FastSpeech2(nn.Layer):
             max_olen = max(olens)
             ys = ys[:, :max_olen]
 
-        return before_outs, after_outs, d_outs, p_outs, e_outs, ys, olens
+        return before_outs, after_outs, d_outs, p_outs, e_outs, ys, olens, mu, logvar, z
 
     def _forward(self,
                  xs: paddle.Tensor,
@@ -631,6 +659,13 @@ class FastSpeech2(nn.Layer):
         if self.use_gst:
             style_embs = self.gst(ys)
             hs = hs + style_embs.unsqueeze(1)
+
+        # integrate with vae
+        if self.use_vae:
+            style_embs, mu, logvar, z = self.vae(ys)
+            hs = hs + style_embs.unsqueeze(1)
+        else:
+            mu, logvar, z = None
 
         # integrate speaker embedding
         if self.spk_embed_dim is not None:
@@ -716,7 +751,7 @@ class FastSpeech2(nn.Layer):
             after_outs = before_outs + self.postnet(
                 before_outs.transpose((0, 2, 1))).transpose((0, 2, 1))
 
-        return before_outs, after_outs, d_outs, p_outs, e_outs
+        return before_outs, after_outs, d_outs, p_outs, e_outs, mu, logvar, z
 
     def inference(
             self,
@@ -1089,6 +1124,23 @@ class FastSpeech2Loss(nn.Layer):
         self.mse_criterion = nn.MSELoss(reduction=reduction)
         self.duration_criterion = DurationPredictorLoss(reduction=reduction)
 
+        self.anneal_function = 'logistic'
+        self.lag = 50000
+        self.k = 0.0025
+        self.x0 = 10000
+        self.upper = 0.2
+
+    def kl_anneal_function(self, anneal_function, lag, step, k, x0, upper):
+        if anneal_function == 'logistic':
+            return float(upper / (upper + np.exp(-k * (step - x0))))
+        elif anneal_function == 'linear':
+            if step > lag:
+                return min(upper, step / x0)
+            else:
+                return 0
+        elif anneal_function == 'constant':
+            return 0.001
+
     def forward(
             self,
             after_outs: paddle.Tensor,
@@ -1102,6 +1154,10 @@ class FastSpeech2Loss(nn.Layer):
             es: paddle.Tensor,
             ilens: paddle.Tensor,
             olens: paddle.Tensor,
+            mu,
+            logvar,
+            z,
+            iteration
     ) -> Tuple[paddle.Tensor, paddle.Tensor, paddle.Tensor, paddle.Tensor]:
         """Calculate forward propagation.
 
@@ -1170,6 +1226,9 @@ class FastSpeech2Loss(nn.Layer):
         duration_loss = self.duration_criterion(d_outs, ds)
         pitch_loss = self.mse_criterion(p_outs, ps)
         energy_loss = self.mse_criterion(e_outs, es)
+        
+        kl_loss = -0.5 * paddle.sum(1 + logvar - mu.pow(2) - logvar.exp())
+        kl_weight = self.kl_anneal_function(self.anneal_function, self.lag, iteration, self.k, self.x0, self.upper)
 
         # make weighted mask and apply it
         if self.use_weighted_masking:
@@ -1200,4 +1259,4 @@ class FastSpeech2Loss(nn.Layer):
             energy_loss = energy_loss.masked_select(
                 pitch_masks.broadcast_to(energy_loss.shape)).sum()
 
-        return l1_loss, duration_loss, pitch_loss, energy_loss
+        return l1_loss, duration_loss, pitch_loss, energy_loss, kl_loss, kl_weight
