@@ -665,7 +665,7 @@ class FastSpeech2(nn.Layer):
             style_embs, mu, logvar, z = self.vae(ys)
             hs = hs + style_embs.unsqueeze(1)
         else:
-            mu, logvar, z = None
+            mu, logvar, z = None, None, None
 
         # integrate speaker embedding
         if self.spk_embed_dim is not None:
@@ -822,7 +822,7 @@ class FastSpeech2(nn.Layer):
             es = e.unsqueeze(0) if e is not None else None
 
             # (1, L, odim)
-            _, outs, d_outs, p_outs, e_outs = self._forward(
+            _, outs, d_outs, p_outs, e_outs, mu, logvar, z = self._forward(
                 xs,
                 ilens,
                 ys,
@@ -835,7 +835,7 @@ class FastSpeech2(nn.Layer):
                 is_inference=True)
         else:
             # (1, L, odim)
-            _, outs, d_outs, p_outs, e_outs = self._forward(
+            _, outs, d_outs, p_outs, e_outs, mu, logvar, z = self._forward(
                 xs,
                 ilens,
                 ys,
@@ -844,7 +844,7 @@ class FastSpeech2(nn.Layer):
                 spk_emb=spk_emb,
                 spk_id=spk_id,
                 tone_id=tone_id)
-        return outs[0], d_outs[0], p_outs[0], e_outs[0]
+        return outs[0], d_outs[0], p_outs[0], e_outs[0], mu, logvar, z
 
     def _integrate_with_spk_embed(self, hs, spk_emb):
         """Integrate speaker embedding with hidden states.
@@ -955,7 +955,7 @@ class FastSpeech2Inference(nn.Layer):
         self.acoustic_model = model
 
     def forward(self, text, spk_id=None, spk_emb=None):
-        normalized_mel, d_outs, p_outs, e_outs = self.acoustic_model.inference(
+        normalized_mel, d_outs, p_outs, e_outs, mu, logvar, z = self.acoustic_model.inference(
             text, spk_id=spk_id, spk_emb=spk_emb)
         logmel = self.normalizer.inverse(normalized_mel)
         return logmel
@@ -1029,7 +1029,7 @@ class StyleFastSpeech2Inference(FastSpeech2Inference):
             Output sequence of features (L, odim).
         """
 
-        normalized_mel, d_outs, p_outs, e_outs = self.acoustic_model.inference(
+        normalized_mel, d_outs, p_outs, e_outs, mu, logvar, z = self.acoustic_model.inference(
             text, 
             speech=speech, 
             durations=None, 
@@ -1083,7 +1083,7 @@ class StyleFastSpeech2Inference(FastSpeech2Inference):
         else:
             energy = e_outs
 
-        normalized_mel, d_outs, p_outs, e_outs = self.acoustic_model.inference(
+        normalized_mel, d_outs, p_outs, e_outs, mu, logvar, z = self.acoustic_model.inference(
             text,
             speech=speech,
             durations=durations,
