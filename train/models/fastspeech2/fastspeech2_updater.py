@@ -124,7 +124,8 @@ class FastSpeech2Evaluator(StandardEvaluator):
                  dataloader,
                  use_masking=False,
                  use_weighted_masking=False,
-                 output_dir=None):
+                 output_dir=None,
+                 updater=None):
         super().__init__(model, dataloader)
         self.use_masking = use_masking
         self.use_weighted_masking = use_weighted_masking
@@ -138,6 +139,8 @@ class FastSpeech2Evaluator(StandardEvaluator):
         self.criterion = FastSpeech2Loss(
             use_masking=self.use_masking,
             use_weighted_masking=self.use_weighted_masking)
+
+        self.updater = updater
 
     def evaluate_core(self, batch):
         self.msg = "Evaluate: "
@@ -174,7 +177,7 @@ class FastSpeech2Evaluator(StandardEvaluator):
             mu=mu,
             logvar=logvar,
             z=z,
-            iteration=self.state.iteration)
+            iteration=self.updater.state.iteration)
 
         kl_loss_final = kl_weight * kl_loss
         loss = l1_loss + duration_loss + pitch_loss + energy_loss + kl_loss_final
