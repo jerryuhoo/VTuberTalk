@@ -23,16 +23,15 @@ from paddlespeech.t2s.modules.transformer.attention import MultiHeadedAttention 
 
 class VAE(nn.Layer):
     def __init__(self, 
-                 idim,  # the input is mel-spectrogram
-                 vae_token_dim,
-                 conv_layers,
-                 conv_chans_list,
-                 conv_kernel_size,
-                 conv_stride,
-                 gru_layers,
-                 gru_units,
-                 z_latent_dim
-                 ):
+                 idim: int=80,
+                 vae_token_dim: int=256,
+                 conv_layers: int=6,
+                 conv_chans_list: Sequence[int]=(32, 32, 64, 64, 128, 128),
+                 conv_kernel_size: int=3,
+                 conv_stride: int=2,
+                 gru_layers: int=1,
+                 gru_units: int=128,
+                 z_latent_dim: int=10):
         super().__init__()
         self.ref_enc = ReferenceEncoder(
             idim=idim,
@@ -54,10 +53,11 @@ class VAE(nn.Layer):
         else:
             return mu
 
-    def forward(self, inputs):
-        enc_out = self.ref_enc(inputs)
-        mu = self.fc1(enc_out)
-        logvar = self.fc2(enc_out)
+    def forward(self, speech: paddle.Tensor):
+        ref_embs = self.ref_enc(speech)
+        print("vae emb", ref_embs)
+        mu = self.fc1(ref_embs)
+        logvar = self.fc2(ref_embs)
         z = self.reparameterize(mu, logvar)
         style_embed = self.fc3(z)
         return style_embed, mu, logvar, z

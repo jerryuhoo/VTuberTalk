@@ -17,18 +17,18 @@ from yacs.config import CfgNode
 
 import sys
 
-sys.path.append("../train/frontend")
+sys.path.append("train/frontend")
 from zh_frontend import Frontend
 
-sys.path.append("../train/models")
+sys.path.append("train/models")
 from fastspeech2 import FastSpeech2
 from speedyspeech import SpeedySpeech
 # from paddlespeech.t2s.models.fastspeech2 import FastSpeech2
 
 # from paddlespeech.t2s.models.fastspeech2 import StyleFastSpeech2Inference
-sys.path.append("..") 
-from train.models.fastspeech2 import StyleFastSpeech2Inference
-from train.models.speedyspeech import SpeedySpeechInference
+
+from fastspeech2 import StyleFastSpeech2Inference
+from speedyspeech import SpeedySpeechInference
 from paddlespeech.t2s.models.hifigan import HiFiGANInference
 from paddlespeech.t2s.models.parallel_wavegan import PWGInference
 import paddlespeech.t2s.models as ttsModels
@@ -82,7 +82,6 @@ class App(QMainWindow):
         self.voice_combo = QComboBox(self)
         self.voice_combo.addItem("阿梓")
         self.voice_combo.addItem("海子姐")
-        self.voice_combo.addItem("老菊")
 
         self.voice_combo.move(240, 80)
         self.voice_combo.resize(120, 40)
@@ -128,6 +127,7 @@ class App(QMainWindow):
         self.acoustic_model_combo.addItem("fastspeech2")
         self.acoustic_model_combo.addItem("gst-speedyspeech")
         self.acoustic_model_combo.addItem("speedyspeech")
+        self.acoustic_model_combo.addItem("vae-fastspeech2")
 
         self.acoustic_model_combo.move(240, 200)
         self.acoustic_model_combo.resize(120, 40)
@@ -175,29 +175,25 @@ class App(QMainWindow):
         # settings
         # parse args and config and redirect to train_sp
         
-        self.fastspeech2_config_path = "../exp/fastspeech2_bili3_aishell3/default_multi.yaml"
-        self.fastspeech2_checkpoint_gst = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_149004.pdz"
-        self.fastspeech2_checkpoint = "../exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_165560.pdz"
-        self.fastspeech2_stat = "../exp/fastspeech2_bili3_aishell3/speech_stats.npy"
-        self.fastspeech2_pitch_stat = "../exp/fastspeech2_bili3_aishell3/pitch_stats.npy"
-        self.fastspeech2_energy_stat = "../exp/fastspeech2_bili3_aishell3/energy_stats.npy"
-        self.phones_dict = "../exp/fastspeech2_bili3_aishell3/phone_id_map.txt"
-        self.speaker_dict="../exp/fastspeech2_bili3_aishell3/speaker_id_map.txt"
+        self.fastspeech2_config_path = "exp/fastspeech2_bili3_aishell3/default_multi.yaml"
+        self.fastspeech2_checkpoint_gst = "exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_149004.pdz"
+        self.fastspeech2_checkpoint = "exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_165560.pdz"
+        self.fastspeech2_checkpoint_vae = ""  
 
-        self.speedyspeech_config_path = "../exp/speedyspeech_bili2/default_multi.yaml"
-        self.speedyspeech_checkpoint = "../exp/speedyspeech_bili2/checkpoints/snapshot_iter_40600.pdz"
-        self.speedyspeech_stat = "../exp/speedyspeech_bili2/feats_stats.npy"
-        self.tones_dict = "../exp/speedyspeech_bili2/tone_id_map.txt"
-        self.phones_dict = "../exp/speedyspeech_bili2/phone_id_map.txt"
-        self.speaker_dict="../exp/speedyspeech_bili2/speaker_id_map.txt"
+        self.speedyspeech_config_path = "exp/speedyspeech_azi_nanami_new/default_multi.yaml"
+        self.speedyspeech_checkpoint = "exp/speedyspeech_azi_nanami_new/checkpoints/snapshot_iter_3901.pdz"
+        self.speedyspeech_stat = "exp/speedyspeech_azi_nanami_new/feats_stats.npy"
+        self.tones_dict = "exp/speedyspeech_azi_nanami_new/tone_id_map.txt"
+        self.phones_dict = "exp/speedyspeech_azi_nanami_new/phone_id_map.txt"
+        self.speaker_dict="exp/speedyspeech_azi_nanami_new/speaker_id_map.txt"
 
-        self.pwg_config_path = "../pretrained_models/pwg_aishell3_ckpt_0.5/default.yaml"
-        self.pwg_checkpoint = "../pretrained_models/pwg_aishell3_ckpt_0.5/snapshot_iter_1000000.pdz" 
-        self.pwg_stat = "../pretrained_models/pwg_aishell3_ckpt_0.5/feats_stats.npy"
+        self.pwg_config_path = "pretrained_models/pwg_aishell3_ckpt_0.5/default.yaml"
+        self.pwg_checkpoint = "pretrained_models/pwg_aishell3_ckpt_0.5/snapshot_iter_1000000.pdz" 
+        self.pwg_stat = "pretrained_models/pwg_aishell3_ckpt_0.5/feats_stats.npy"
 
-        self.hifigan_config_path = "../pretrained_models/hifigan_aishell3/default.yaml"
-        self.hifigan_checkpoint = "../pretrained_models/hifigan_aishell3/snapshot_iter_285000.pdz" 
-        self.hifigan_stat = "../pretrained_models/hifigan_aishell3/feats_stats.npy"
+        self.hifigan_config_path = "pretrained_models/hifigan_aishell3/default.yaml"
+        self.hifigan_checkpoint = "pretrained_models/hifigan_aishell3/snapshot_iter_285000.pdz" 
+        self.hifigan_stat = "pretrained_models/hifigan_aishell3/feats_stats.npy"
 
         self.ngpu = 0
         self.style = "Normal"
@@ -206,6 +202,7 @@ class App(QMainWindow):
         self.spk_id = 0 # int(self.voice_combo.currentText)
         self.wav = None
         self.use_gst = False
+        self.use_vae = False
         self.vocoder = "pwg"
         self.acoustic_model = "speedyspeech"
 
@@ -233,6 +230,7 @@ class App(QMainWindow):
         # self.loadAcousticModel()
         # self.loadVocoderModel()
         # self.loadFrontend()
+        print("vae,", self.use_vae)
 
     def loadFrontend(self):
         if self.acoustic_model == "fastspeech2":
@@ -244,11 +242,27 @@ class App(QMainWindow):
     def loadAcousticModel(self):
         # acoustic model
         if self.acoustic_model == "fastspeech2":
-            self.phones_dict = "../exp/fastspeech2_bili3_aishell3/phone_id_map.txt"
-            self.speaker_dict="../exp/fastspeech2_bili3_aishell3/speaker_id_map.txt"
+            if self.use_gst:          
+                self.fastspeech2_stat = "exp/fastspeech2_bili3_aishell3/speech_stats.npy"
+                self.fastspeech2_pitch_stat = "exp/fastspeech2_bili3_aishell3/pitch_stats.npy"
+                self.fastspeech2_energy_stat = "exp/fastspeech2_bili3_aishell3/energy_stats.npy"
+                self.phones_dict = "exp/fastspeech2_bili3_aishell3/phone_id_map.txt"
+                self.speaker_dict="exp/fastspeech2_bili3_aishell3/speaker_id_map.txt"
+            elif self.use_vae:
+                self.fastspeech2_stat = "exp/vae_fastspeech2_azi_nanami/speech_stats.npy"
+                self.fastspeech2_pitch_stat = "exp/vae_fastspeech2_azi_nanami/pitch_stats.npy"
+                self.fastspeech2_energy_stat = "exp/vae_fastspeech2_azi_nanami/energy_stats.npy"
+                self.phones_dict = "exp/vae_fastspeech2_azi_nanami/phone_id_map.txt"
+                self.speaker_dict="exp/vae_fastspeech2_azi_nanami/speaker_id_map.txt"
+            else:
+                self.fastspeech2_stat = "exp/fastspeech2_bili3_aishell3/speech_stats.npy"
+                self.fastspeech2_pitch_stat = "exp/fastspeech2_bili3_aishell3/pitch_stats.npy"
+                self.fastspeech2_energy_stat = "exp/fastspeech2_bili3_aishell3/energy_stats.npy"
+                self.phones_dict = "exp/fastspeech2_bili3_aishell3/phone_id_map.txt"
+                self.speaker_dict="exp/fastspeech2_bili3_aishell3/speaker_id_map.txt"
         elif self.acoustic_model == "speedyspeech":
-            self.phones_dict = "../exp/speedyspeech_bili2/phone_id_map.txt"
-            self.speaker_dict="../exp/speedyspeech_bili2/speaker_id_map.txt"
+            self.phones_dict = "exp/speedyspeech_azi_nanami_new/phone_id_map.txt"
+            self.speaker_dict="exp/speedyspeech_azi_nanami_new/speaker_id_map.txt"
 
         fields = ["utt_id", "text"]
         self.spk_num = None
@@ -274,10 +288,13 @@ class App(QMainWindow):
             print("fastspeech2")
             odim = self.fastspeech2_config.n_mels
             self.model = FastSpeech2(
-                idim=vocab_size, odim=odim, **self.fastspeech2_config["model"], spk_num=self.spk_num, use_gst=self.use_gst)
+                idim=vocab_size, odim=odim, **self.fastspeech2_config["model"], spk_num=self.spk_num, use_gst=self.use_gst, use_vae=self.use_vae)
             if self.use_gst:
                 self.model.set_state_dict(
                     paddle.load(self.fastspeech2_checkpoint_gst)["main_params"])
+            if self.use_vae:
+                self.model.set_state_dict(
+                    paddle.load(self.fastspeech2_checkpoint_vae)["main_params"])
             else:
                 self.model.set_state_dict(
                     paddle.load(self.fastspeech2_checkpoint)["main_params"])
@@ -334,7 +351,7 @@ class App(QMainWindow):
 
     @pyqtSlot()
     def onGenerateButtonClicked(self):
-        if self.ref_audio_path == "" and self.use_gst:
+        if self.ref_audio_path == "" and (self.use_gst or self.use_vae):
             self.messageDialog("请先选择参考音频！")
             return
 
@@ -546,30 +563,9 @@ class App(QMainWindow):
 
     def onVoiceComboboxChanged(self, text):
         if text == "阿梓":
-            if self.acoustic_model == "fastspeech2":
-                if self.use_gst:
-                    self.spk_id = 175
-                else:
-                    self.spk_id = 175
-            elif self.acoustic_model == "speedyspeech":
-                self.spk_id = 0
-        elif text == "老菊":
-            if self.acoustic_model == "fastspeech2":
-                if self.use_gst:
-                    # self.messageDialog("暂时不支持")
-                    self.spk_id = 176
-                else:
-                    self.spk_id = 176
-            elif self.acoustic_model == "speedyspeech":
-                self.messageDialog("暂时不支持")
+            self.spk_id = 0
         elif text == "海子姐":
-            if self.acoustic_model == "fastspeech2":
-                if self.use_gst:
-                    self.spk_id = 177
-                else:
-                    self.spk_id = 177
-            elif self.acoustic_model == "speedyspeech":
-                self.spk_id = 1
+            self.spk_id = 1
 
     def onTTSStyleComboboxChanged(self, text):
         if text == "正常":
@@ -595,14 +591,20 @@ class App(QMainWindow):
         if text == "gst-fastspeech2":
             self.acoustic_model = "fastspeech2"
             self.use_gst = True
+            self.use_vae = False
         elif text == "fastspeech2":
             self.acoustic_model = "fastspeech2"
             self.use_gst = False
+            self.use_vae = False
         elif text == "gst-speedyspeech":
             self.messageDialog("暂不支持")
             return
         elif text == "speedyspeech":
             self.acoustic_model = "speedyspeech"
+            self.use_gst = False
+        elif text == "vae-fastspeech2":
+            self.acoustic_model = "fastspeech2"
+            self.use_vae = True
             self.use_gst = False
         self.onVoiceComboboxChanged(self.voice_combo.currentText())
         self.loadAcousticModel()

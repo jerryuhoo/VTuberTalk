@@ -539,10 +539,10 @@ pip install sounddevice
 ```
 
 启动GUI界面：
+（从项目根目录启动）
 
 ```shell
-cd gui/
-python main2.py
+python gui/main2.py
 ```
 
 ## 6. TODO list
