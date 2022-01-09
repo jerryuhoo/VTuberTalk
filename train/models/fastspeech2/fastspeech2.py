@@ -13,7 +13,6 @@
 # limitations under the License.
 # Modified from espnet(https://github.com/espnet/espnet)
 """Fastspeech2 related modules for paddle"""
-from logging import log
 from typing import Dict
 from typing import Sequence
 from typing import Tuple
@@ -144,7 +143,7 @@ class FastSpeech2(nn.Layer):
             vae_conv_stride: int=2,
             vae_gru_layers: int=1,
             vae_gru_units: int=128,
-            vae_z_latent_dim: int=32,
+            vae_z_latent_dim: int=10,
             # training related
             init_type: str="xavier_uniform",
             init_enc_alpha: float=1.0,
@@ -1227,9 +1226,12 @@ class FastSpeech2Loss(nn.Layer):
         pitch_loss = self.mse_criterion(p_outs, ps)
         energy_loss = self.mse_criterion(e_outs, es)
         
-        kl_loss = -0.5 * paddle.sum(1 + logvar - mu.pow(2) - logvar.exp())
-        kl_weight = self.kl_anneal_function(self.anneal_function, self.lag, iteration, self.k, self.x0, self.upper)
-
+        if (mu != None):
+            kl_loss = -0.5 * paddle.sum(1 + logvar - mu.pow(2) - logvar.exp())
+            kl_weight = self.kl_anneal_function(self.anneal_function, self.lag, iteration, self.k, self.x0, self.upper)
+        else:
+            kl_loss, kl_weight = 0, 0
+            
         # make weighted mask and apply it
         if self.use_weighted_masking:
             out_masks = make_non_pad_mask(olens).unsqueeze(-1)

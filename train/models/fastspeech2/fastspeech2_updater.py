@@ -89,7 +89,11 @@ class FastSpeech2Updater(StandardUpdater):
             logvar=logvar,
             z=z,
             iteration=self.state.iteration)
-        kl_loss_final = kl_weight * kl_loss
+
+        if (mu != None):
+            kl_loss_final = kl_weight * kl_loss
+        else:
+            kl_loss_final = 0
         loss = l1_loss + duration_loss + pitch_loss + energy_loss + kl_loss_final
 
         optimizer = self.optimizer
@@ -102,17 +106,19 @@ class FastSpeech2Updater(StandardUpdater):
         report("train/duration_loss", float(duration_loss))
         report("train/pitch_loss", float(pitch_loss))
         report("train/energy_loss", float(energy_loss))
-        report("train/kl_loss", float(kl_loss))
-        report("train/kl_weight", float(kl_weight))
-        report("train/kl_loss_final", float(kl_loss_final))
+        if (mu != None):
+            report("train/kl_loss", float(kl_loss))
+            report("train/kl_weight", float(kl_weight))
+            report("train/kl_loss_final", float(kl_loss_final))
 
         losses_dict["l1_loss"] = float(l1_loss)
         losses_dict["duration_loss"] = float(duration_loss)
         losses_dict["pitch_loss"] = float(pitch_loss)
         losses_dict["energy_loss"] = float(energy_loss)
-        losses_dict["kl_loss"] = float(kl_loss)
-        losses_dict["kl_weight"] = float(kl_weight)
-        losses_dict["kl_loss_final"] = float(kl_loss_final)
+        if (mu != None):
+            losses_dict["kl_loss"] = float(kl_loss)
+            losses_dict["kl_weight"] = float(kl_weight)
+            losses_dict["kl_loss_final"] = float(kl_loss_final)
         losses_dict["loss"] = float(loss)
         self.msg += ', '.join('{}: {:>.6f}'.format(k, v)
                               for k, v in losses_dict.items())
@@ -178,8 +184,10 @@ class FastSpeech2Evaluator(StandardEvaluator):
             logvar=logvar,
             z=z,
             iteration=self.updater.state.iteration)
-
-        kl_loss_final = kl_weight * kl_loss
+        if (mu != None):
+            kl_loss_final = kl_weight * kl_loss
+        else:
+            kl_loss_final = 0
         loss = l1_loss + duration_loss + pitch_loss + energy_loss + kl_loss_final
 
         report("eval/loss", float(loss))
@@ -187,18 +195,20 @@ class FastSpeech2Evaluator(StandardEvaluator):
         report("eval/duration_loss", float(duration_loss))
         report("eval/pitch_loss", float(pitch_loss))
         report("eval/energy_loss", float(energy_loss))
-        report("train/kl_loss", float(kl_loss))
-        report("train/kl_weight", float(kl_weight))
-        report("train/kl_loss_final", float(kl_loss_final))
+        if (mu != None):
+            report("train/kl_loss", float(kl_loss))
+            report("train/kl_weight", float(kl_weight))
+            report("train/kl_loss_final", float(kl_loss_final))
 
 
         losses_dict["l1_loss"] = float(l1_loss)
         losses_dict["duration_loss"] = float(duration_loss)
         losses_dict["pitch_loss"] = float(pitch_loss)
         losses_dict["energy_loss"] = float(energy_loss)
-        losses_dict["kl_loss"] = float(kl_loss)
-        losses_dict["kl_weight"] = float(kl_weight)
-        losses_dict["kl_loss_final"] = float(kl_loss_final)
+        if (mu != None):
+            losses_dict["kl_loss"] = float(kl_loss)
+            losses_dict["kl_weight"] = float(kl_weight)
+            losses_dict["kl_loss_final"] = float(kl_loss_final)
         losses_dict["loss"] = float(loss)
         
         self.msg += ', '.join('{}: {:>.6f}'.format(k, v)
