@@ -235,7 +235,7 @@ if [ ${fastspeech2} == False ] && [ ${multiple} == False ]; then
             --use-relative-path=True || exit -1
     fi
 
-    if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ] && [ ${gst} == False ]; then
+    if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ] && [ ${use_gst} == False ]; then
         echo "train"
         python train/exps/speedyspeech/train.py \
             --train-metadata=dump/train/norm/metadata.jsonl \
@@ -312,7 +312,7 @@ if [ ${fastspeech2} == False ] && [ ${multiple} == True ]; then
             --use-relative-path=True || exit -1
     fi
 
-    if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ] && [ ${gst} == False ]; then
+    if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ] && [ ${use_gst} == False ]; then
         echo "train"
         python train/exps/speedyspeech/train.py \
             --train-metadata=dump/train/norm/metadata.jsonl \
