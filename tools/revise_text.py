@@ -12,7 +12,7 @@ def move(root_path, file_name, output_path):
 
 def process(files, path):
     text_dict = {}
-    with open("./text.txt" ,'r') as text_file:
+    with open("./text.txt" ,'r', encoding='utf-8') as text_file:
         for line in text_file.readlines():
             line = line[:-1]
             file_name, text = line.split()[0], re.search(r'[".txt "].*',line).group()[5:]
@@ -21,7 +21,7 @@ def process(files, path):
         if not file.endswith('.txt'):
             continue
         position = os.path.join(path, file)
-        with open(position ,'r') as f:
+        with open(position ,'r', encoding='utf-8') as f:
             ori_text = ""
             for line in f.readlines():
                 ori_text = line
@@ -31,14 +31,17 @@ def process(files, path):
                 outdir = os.path.join(path, "../unrecognized")
                 if not os.path.exists(outdir):
                     os.mkdir(outdir)
+                f.close()
                 move(path, file, outdir)
                 print("move " + file + " to unrecognized.")
                 continue
 
             if revised_text != ori_text:
                 print(str(file) + " " + ori_text + " --> " + revised_text)
-                with open(position, 'w') as revised_file:
+                with open(position, 'w', encoding='utf-8') as revised_file:
                     revised_file.write(revised_text)
+                revised_file.close()
+        f.close()
 
 
 if __name__ == '__main__':

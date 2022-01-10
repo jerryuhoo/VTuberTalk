@@ -16,10 +16,12 @@ def process(files, path):
             continue
         position = path + file
         print(position)
-        with open(position ,'r') as f:
+        with open(position ,'r', encoding='utf-8') as f:
             for line in f.readlines():
-                with open("./text.txt","a") as p:
+                with open("./text.txt","a", encoding='utf-8') as p:
                     p.write(str(file) + " " + line + "\n")
+                p.close()
+        f.close()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(__doc__)
