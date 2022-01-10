@@ -17,8 +17,9 @@ def process(path):
         path_list = [basename]
 
     for filename in path_list:
-        if os.path.isdir(os.path.join(path, filename)):
-            continue
+        root_folder = os.path.join(path, filename)
+        if os.path.isdir(root_folder):
+            process(root_folder)
         filename_suffix = os.path.splitext(filename)[1]
         input_file_path = os.path.join(path, filename)
         output_file_path = os.path.join(path, os.path.splitext(filename)[0] + ".lab")
@@ -39,7 +40,6 @@ def process(path):
         else:
             # print("file ", filename, " format not supported!")
             continue
-        
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(__doc__)
@@ -51,3 +51,5 @@ if __name__ == '__main__':
         print("path not existed!")
     else:
         process(args.path)
+
+    print("done!")
