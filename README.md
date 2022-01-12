@@ -9,7 +9,39 @@ Demo视频：
 
 ## 1. 环境安装 && 准备
 
+### 1.1. 安装ffmepg
+
+Windows:
+首先检查一下自己有没有安装过ffmpeg，如果没有就下载
+[ffmpeg](https://ffmpeg.org/download.html)
+
+[参考教程](https://zhuanlan.zhihu.com/p/118362010)
+
+Mac：
+
+```basj
+brew install ffmpeg
+```
+
+Ubuntu：
+
+```bash
+sudo apt update
+sudo apt install ffmpeg
+ffmpeg -version
+```
+
+### 1.2. conda搭建环境
+
 python >= 3.8
+
+```bash
+conda create -n paddlespeech python=3.8
+conda activate paddlespeech
+pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
+
+### 1.3. 手动安装cpu/gpu版本的paddlepaddle（如果正确安装则跳过）
 
 参考[paddlepaddle安装](https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/install/pip/linux-pip.html)
 
@@ -27,7 +59,7 @@ CPU安装：
 pip install paddlepaddle paddlespeech
 ```
 
-目录结构：
+### 1.4. 目录结构
 
 ```text
 ├── train
