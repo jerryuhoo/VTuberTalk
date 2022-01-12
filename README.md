@@ -35,10 +35,20 @@ ffmpeg -version
 
 python >= 3.8
 
+gpu版本：建议训练模型使用这个版本，需要先配置好cuda环境。
+
 ```bash
 conda create -n paddlespeech python=3.8
 conda activate paddlespeech
 pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
+
+cpu版本：如果只是单纯使用，建议安装这个版本。
+
+```bash
+conda create -n paddlespeech python=3.8
+conda activate paddlespeech
+pip install -r requirements_cpu.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
 ### 1.3. 手动安装cpu/gpu版本的paddlepaddle（如果正确安装则跳过）

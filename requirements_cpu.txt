@@ -1,0 +1,7 @@
+paddlepaddle
+paddlespeech
+pydub
+PyQt5
+sounddevice
+jsonlines
+yacs
