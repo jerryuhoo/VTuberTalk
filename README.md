@@ -499,7 +499,7 @@ python train/exps/speedyspeech/train.py \
 visualdl --logdir <log folder path>
 ```
 
-## 4. 推理
+## 4. 推理/导出静态模型
 
 下载[pwg_aishell3_ckpt_0.5](https://paddlespeech.bj.bcebos.com/Parakeet/released_models/pwgan/pwg_aishell3_ckpt_0.5.zip)。
 
@@ -507,10 +507,10 @@ visualdl --logdir <log folder path>
 
 把下载的vocoder模型放在pretrained_models目录中
 
-### 1. fastspeech + pwg + multiple
+### 4.1. fastspeech + pwg + multiple
 
 ```shell
-python train/synthesize_e2e.py \
+python train/exps/synthesize_e2e.py \
         --am=fastspeech2_aishell3 \
         --am_config=train/conf/fastspeech2/default_multi.yaml \
         --am_ckpt=exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_<iter num>.pdz \
@@ -529,10 +529,10 @@ python train/synthesize_e2e.py \
         --spk_id=174
 ```
 
-### 2. fastspeech + hifigan + single
+### 4.2. fastspeech + hifigan + single
 
 ```shell
-python train/synthesize_e2e.py \
+python train/exps/synthesize_e2e.py \
         --am=fastspeech2_csmsc \
         --am_config=train/conf/fastspeech2/default_single.yaml \
         --am_ckpt=exp/fastspeech2_ghost/checkpoints/snapshot_iter_<iter num>.pdz \
@@ -549,10 +549,10 @@ python train/synthesize_e2e.py \
         --ngpu=1
 ```
 
-### 3. speedyspeech + pwg
+### 4.3. speedyspeech + pwg
 
 ```shell
-python train/synthesize_e2e.py \
+python train/exps/synthesize_e2e.py \
         --am=speedyspeech_csmsc \
         --am_config=train/conf/speedyspeech/default.yaml \
         --am_ckpt=exp/speedyspeech_bili3_aishell3/checkpoints/snapshot_iter_<iter num>.pdz \
@@ -567,6 +567,18 @@ python train/synthesize_e2e.py \
         --inference_dir=train/inference \
         --phones_dict=dump/phone_id_map.txt \
         --tones_dict=dump/tone_id_map.txt
+```
+
+### 4.4. 导出静态模型
+
+```shell
+python3 train/exps/inference.py \
+    --inference_dir=train/inference \
+    --am=fastspeech2_csmsc \
+    --voc=mb_melgan_csmsc \
+    --text=sentences.txt \
+    --output_dir=train/pd_infer_out \
+    --phones_dict=dump/phone_id_map.txt
 ```
 
 ## 5. GUI界面 (WIP)
