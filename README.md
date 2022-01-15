@@ -581,7 +581,7 @@ python3 train/exps/inference.py \
     --phones_dict=dump/phone_id_map.txt
 ```
 
-## 5. GUI界面 (WIP)
+## 5. GUI界面
 
 ![Alt text](gui/gui.png?raw=true "Title")
 
@@ -603,7 +603,8 @@ python gui/main2.py
 
 - [x] 添加GST模块。
 - [x] spleeter降噪。
+- [ ] 静态模型推理。
 - [ ] 优化ASR流程，目前batch size = 1，速度慢。
 - [ ] preprocess优化，不需要重复处理数据集。
-- [ ] 小规模数据集训练
-- [ ] VAE情感控制
+- [ ] 小规模数据集训练（AdaSpeech）。
+- [ ] VAE情感控制。
