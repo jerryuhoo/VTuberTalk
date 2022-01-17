@@ -252,6 +252,12 @@ mfa align <data/wav/speaker_name/split> MFA/pinyin.dict MFA/mandarin.zip <data/T
 
 ### 2.10. 生成其他预处理文件
 
+#### 一键运行
+
+```shell
+./run_train.sh
+```
+
 #### 生成duration
 
 ##### 1. fastspeech2 模型（多人）
@@ -515,7 +521,7 @@ visualdl --logdir <log folder path>
 ./synthesize_e2e.sh
 ```
 
-### 4.1. fastspeech + pwg + multiple
+### 4.2. fastspeech + pwg + multiple
 
 ```shell
 python train/exps/synthesize_e2e.py \
@@ -537,7 +543,7 @@ python train/exps/synthesize_e2e.py \
         --spk_id=174
 ```
 
-### 4.2. fastspeech + hifigan + single
+### 4.3. fastspeech + hifigan + single
 
 ```shell
 python train/exps/synthesize_e2e.py \
@@ -557,7 +563,7 @@ python train/exps/synthesize_e2e.py \
         --ngpu=1
 ```
 
-### 4.3. speedyspeech + pwg
+### 4.4. speedyspeech + pwg
 
 ```shell
 python train/exps/synthesize_e2e.py \
