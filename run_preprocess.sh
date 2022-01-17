@@ -22,6 +22,7 @@ if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
 fi
 
 if [ ${use_spleeter} == True ]; then
+    export TF_FORCE_GPU_ALLOW_GROWTH=true
     if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
         # spleeter
         echo "spleeter"
