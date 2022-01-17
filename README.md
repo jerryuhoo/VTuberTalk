@@ -509,6 +509,12 @@ visualdl --logdir <log folder path>
 
 把下载的vocoder模型放在pretrained_models目录中
 
+### 4.1. 一键运行
+
+```shell
+./synthesize_e2e.sh
+```
+
 ### 4.1. fastspeech + pwg + multiple
 
 ```shell
@@ -569,18 +575,6 @@ python train/exps/synthesize_e2e.py \
         --inference_dir=train/inference \
         --phones_dict=dump/phone_id_map.txt \
         --tones_dict=dump/tone_id_map.txt
-```
-
-### 4.4. 导出静态模型
-
-```shell
-python3 train/exps/inference.py \
-    --inference_dir=train/inference \
-    --am=fastspeech2_csmsc \
-    --voc=mb_melgan_csmsc \
-    --text=sentences.txt \
-    --output_dir=train/pd_infer_out \
-    --phones_dict=dump/phone_id_map.txt
 ```
 
 ## 5. GUI界面

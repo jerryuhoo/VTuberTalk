@@ -124,8 +124,9 @@ def evaluate(args):
         am = am_class(
             idim=vocab_size, odim=odim, spk_num=spk_num, **am_config["model"])
     elif am_name == 'speedyspeech':
+        
         am = am_class(
-            vocab_size=vocab_size, tone_size=tone_size, **am_config["model"])
+            vocab_size=vocab_size, tone_size=tone_size, spk_num=spk_num, **am_config["model"])
 
     am.set_state_dict(paddle.load(args.am_ckpt)["main_params"])
     am.eval()
@@ -158,10 +159,19 @@ def evaluate(args):
     if args.inference_dir:
         # acoustic model
         if am_name == 'fastspeech2':
+            print("fastspeech2 inference static model")
             if am_dataset in {"aishell3", "vctk"} and args.speaker_dict:
-                print(
-                    "Haven't test dygraph to static for multi speaker fastspeech2 now!"
-                )
+                am_inference_static = jit.to_static(
+                    am_inference,
+                    input_spec=[
+                        InputSpec([-1], dtype=paddle.int64), # text
+                        InputSpec([-1], dtype=paddle.int64), # spk_id
+                        InputSpec([-1], dtype=paddle.float32) # spk_emb
+                    ])
+                paddle.jit.save(am_inference_static,
+                                os.path.join(args.inference_dir, args.am))
+                am_inference_static = paddle.jit.load(
+                    os.path.join(args.inference_dir, args.am))
             else:
                 am_inference = jit.to_static(
                     am_inference,
@@ -174,8 +184,10 @@ def evaluate(args):
             am_inference = jit.to_static(
                 am_inference,
                 input_spec=[
-                    InputSpec([-1], dtype=paddle.int64),
-                    InputSpec([-1], dtype=paddle.int64)
+                    InputSpec([-1], dtype=paddle.int64), # text
+                    InputSpec([-1], dtype=paddle.int64), # tone
+                    None, # duration
+                    InputSpec([-1], dtype=paddle.int64) # spk_id
                 ])
 
             paddle.jit.save(am_inference,
@@ -228,8 +240,9 @@ def evaluate(args):
                     else:
                         mel = am_inference(part_phone_ids)
                 elif am_name == 'speedyspeech':
+                    spk_id = paddle.to_tensor(args.spk_id)
                     part_tone_ids = tone_ids[i]
-                    mel = am_inference(part_phone_ids, part_tone_ids)
+                    mel = am_inference(part_phone_ids, part_tone_ids, spk_id)
                 # vocoder
                 wav = voc_inference(mel)
                 if flags == 0:

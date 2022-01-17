@@ -171,6 +171,7 @@ class App(QMainWindow):
         self.style = "Normal"
         self.speed = "1.0xspeed"
         self.wav = None
+        self.fs = 24000
 
         if self.ngpu == 0:
             paddle.set_device("cpu")
@@ -189,9 +190,15 @@ class App(QMainWindow):
 
     def loadFrontend(self):
         if self.acoustic_model == "fastspeech2":
-            self.frontend = Frontend(phone_vocab_path=self.phones_dict)
+            try:
+                self.frontend = Frontend(phone_vocab_path=self.phones_dict)
+            except:
+                self.messageDialog("未找到phones_dict路径")
         elif self.acoustic_model == "speedyspeech":
-            self.frontend = Frontend(phone_vocab_path=self.phones_dict, tone_vocab_path=self.tones_dict)
+            try:
+                self.frontend = Frontend(phone_vocab_path=self.phones_dict, tone_vocab_path=self.tones_dict)
+            except:
+                self.messageDialog("未找到phones_dict路径")
         print("frontend done!")
     
     def loadAcousticModel(self):
@@ -202,11 +209,11 @@ class App(QMainWindow):
             self.speaker_dict = ""
                 
         elif self.acoustic_model == "speedyspeech":
-            self.tones_dict = "exp/speedyspeech_azi_nanami/tone_id_map.txt"
-            self.phones_dict = "exp/speedyspeech_azi_nanami/phone_id_map.txt"
-            self.speaker_dict="exp/speedyspeech_azi_nanami/speaker_id_map.txt"
+            self.tones_dict = "pretrained_models/speedyspeech_azi_nanami_static/tone_id_map.txt"
+            self.phones_dict = "pretrained_models/speedyspeech_azi_nanami_static/phone_id_map.txt"
+            self.speaker_dict="pretrained_models/speedyspeech_azi_nanami_static/speaker_id_map.txt"
             self.am_inference = paddle.jit.load(
-                            os.path.join("pretrained_models/speedyspeech_azi_nanami_static", "speedyspeech_azi_nanami"))
+                            os.path.join("pretrained_models/speedyspeech_azi_nanami_static", "speedyspeech_csmsc"))
 
         fields = ["utt_id", "text"]
         self.spk_num = None
@@ -245,7 +252,7 @@ class App(QMainWindow):
         if self.vocoder == "pwg":
             self.voc_inference = paddle.jit.load(os.path.join("pretrained_models/pwg_baker_static_0.4", "pwgan_csmsc"))
         elif self.vocoder == "hifigan":
-            self.voc_inference = paddle.jit.load(os.path.join("pretrained_models/hifigan_fastspeech2_ft_azi_nanami_static", "hifigan_azi_nanami"))
+            self.voc_inference = paddle.jit.load(os.path.join("pretrained_models/speedyspeech_azi_nanami_static", "hifigan_csmsc"))
 
     @pyqtSlot()
     def onGenerateButtonClicked(self):
@@ -410,7 +417,7 @@ class App(QMainWindow):
             if fpath:
                 if Path(fpath).suffix == "":
                     fpath += ".wav"
-                sf.write(fpath, self.wav.numpy(), samplerate=self.fastspeech2_config.fs)
+                sf.write(fpath, self.wav.numpy(), samplerate=self.fs)
         else:
             self.messageDialog("还没有合成声音，无法保存！")
     
@@ -494,7 +501,7 @@ class App(QMainWindow):
             return
         try:
             sd.stop()
-            sd.play(self.wav, self.fastspeech2_config.fs)
+            sd.play(self.wav, self.fs)
         except Exception as e:
             print(e)
             self.log("Error in audio playback. Try selecting a different audio output device.")
