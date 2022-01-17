@@ -151,6 +151,8 @@ python tools/cut_source.py --path <data/wav/video/> --min <minute to cut> --sr <
 
 ### 2.2. Spleeter降噪
 
+直接运行可能会因为网络的原因下载模型失败，建议直接先下载好[模型](https://github.com/deezer/spleeter/releases/download/v1.4.0/2stems.tar.gz)，放到pretrained_models/2stems中。
+
 ```shell
 pip install spleeter
 spleeter separate \
