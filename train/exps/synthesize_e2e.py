@@ -124,7 +124,6 @@ def evaluate(args):
         am = am_class(
             idim=vocab_size, odim=odim, spk_num=spk_num, **am_config["model"])
     elif am_name == 'speedyspeech':
-        
         am = am_class(
             vocab_size=vocab_size, tone_size=tone_size, spk_num=spk_num, **am_config["model"])
 
@@ -159,18 +158,16 @@ def evaluate(args):
     if args.inference_dir:
         # acoustic model
         if am_name == 'fastspeech2':
-            print("fastspeech2 inference static model")
             if am_dataset in {"aishell3", "vctk"} and args.speaker_dict:
-                am_inference_static = jit.to_static(
+                am_inference = jit.to_static(
                     am_inference,
                     input_spec=[
-                        InputSpec([-1], dtype=paddle.int64), # text
-                        InputSpec([-1], dtype=paddle.int64), # spk_id
-                        InputSpec([-1], dtype=paddle.float32) # spk_emb
+                        InputSpec([-1], dtype=paddle.int64),
+                        InputSpec([1], dtype=paddle.int64)
                     ])
-                paddle.jit.save(am_inference_static,
+                paddle.jit.save(am_inference,
                                 os.path.join(args.inference_dir, args.am))
-                am_inference_static = paddle.jit.load(
+                am_inference = paddle.jit.load(
                     os.path.join(args.inference_dir, args.am))
             else:
                 am_inference = jit.to_static(

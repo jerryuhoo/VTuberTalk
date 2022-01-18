@@ -867,7 +867,7 @@ class FastSpeech2(nn.Layer):
         elif self.spk_embed_integration_type == "concat":
             # concat hidden states with spk embeds and then apply projection
             spk_emb = F.normalize(spk_emb).unsqueeze(1).expand(
-                shape=[-1, hs.shape[1], -1])
+                shape=[-1, paddle.shape(hs)[1], -1])
             hs = self.spk_projection(paddle.concat([hs, spk_emb], axis=-1))
         else:
             raise NotImplementedError("support only add or concat.")
@@ -897,7 +897,7 @@ class FastSpeech2(nn.Layer):
         elif self.tone_embed_integration_type == "concat":
             # concat hidden states with tone embeds and then apply projection
             tone_embs = F.normalize(tone_embs).expand(
-                shape=[-1, hs.shape[1], -1])
+                shape=[-1, paddle.shape(hs)[1], -1])
             hs = self.tone_projection(paddle.concat([hs, tone_embs], axis=-1))
         else:
             raise NotImplementedError("support only add or concat.")
