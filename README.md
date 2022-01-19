@@ -156,7 +156,7 @@ python tools/cut_source.py --path <data/wav/video/> --min <minute to cut> --sr <
 ```shell
 pip install spleeter
 spleeter separate \
-     -o <data/wav/speaker_name/clean_raw> \
+     -o <data/wav/speaker_name/clean_raw/> \
      <data/wav/speaker_name/raw/*.wav>
 ```
 
@@ -165,13 +165,13 @@ spleeter separate \
 获取降噪后的人声并且重命名，这步做完之后的文件在clean_raw2，可以删除clean_raw。
 
 ```shell
-python tools/glob_spleeter_vocals.py --path <data/wav/speaker_name/clean_raw>
+python tools/glob_spleeter_vocals.py --path <data/wav/speaker_name/clean_raw/>
 ```
 
 降噪后又变成了双声道，因此需要执行
 
 ```shell
-python tools/audio_to_mono.py --path <data/wav/speaker_name/clean_raw2>
+python tools/audio_to_mono.py --path <data/wav/speaker_name/clean_raw2/>
 ```
 
 ### 2.3. 将音频分割成片段
@@ -181,13 +181,13 @@ python tools/audio_to_mono.py --path <data/wav/speaker_name/clean_raw2>
 音频分割使用了webrtcvad模块，其中第一个参数aggressiveness是分割检测的敏感度，数字越大，对于静音检测越敏感，分割的音频个数也越多。范围为0～3。
 
 ```shell
-python tools/split_audio.py --ag <aggressiveness> --in_path <data/wav/speaker_name/clean_raw2>
+python tools/split_audio.py --ag <aggressiveness> --in_path <data/wav/speaker_name/clean_raw2/>
 ```
 
 ### 2.4. 使用ASR获得文本
 
 ```shell
-python tools/gen_text.py --path <data/wav/speaker_name/split> --lang <language: 'en' or 'zh'>
+python tools/gen_text.py --path <data/wav/speaker_name/split/> --lang <language: 'en' or 'zh'>
 ```
 
 ### 2.5. 使用字幕获得文本
@@ -201,7 +201,7 @@ python tools/split_audio_by_srt.py --path <data>
 ### 2.6. 去除过长过短文本
 
 ```shell
-python tools/data_filter.py --path <data/wav/speaker_name/split>
+python tools/data_filter.py --path <data/wav/speaker_name/split/>
 ```
 
 ### 2.7. 文本纠正
@@ -209,19 +209,19 @@ python tools/data_filter.py --path <data/wav/speaker_name/split>
 收集所有的文本到一个txt文件中。
 
 ```shell
-python tools/glob_text.py --path <data/wav/speaker_name/split>
+python tools/glob_text.py --path <data/wav/speaker_name/split/>
 ```
 
 打开txt文件，修改错字后再运行
 
 ```shell
-python tools/revise_text.py --path <data/wav/speaker_name/split>
+python tools/revise_text.py --path <data/wav/speaker_name/split/>
 ```
 
 ### 2.8. 汉字转拼音
 
 ```shell
-python tools/hanzi_to_pinyin.py --path <data/wav/speaker_name/split>
+python tools/hanzi_to_pinyin.py --path <data/wav/speaker_name/split/>
 ```
 
 ### 2.9. MFA音素对齐
@@ -237,13 +237,24 @@ conda install montreal-forced-aligner
 
 自己训练一个，详见[MFA训练教程](https://montreal-forced-aligner.readthedocs.io/en/latest/first_steps/index.html#first-steps-align-train-acoustic-model)
 
-```shell
-python tools/generate_lexicon.py pinyin --with-r --with-tone
-mfa train <corpus/> MFA/pinyin.dict MFA/mandarin.zip <alignment/>
-```
+单人数据集：
 
 ```shell
-mfa align <data/wav/speaker_name/split> MFA/pinyin.dict MFA/mandarin.zip <data/TextGrid/speaker_name>
+python tools/generate_lexicon.py pinyin --with-r --with-tone
+mfa train <data/wav/speaker_name/split/> MFA/pinyin.dict MFA/mandarin.zip <data/TextGrid/speaker_name/>
+```
+
+多人数据集：
+
+```shell
+python tools/generate_lexicon.py pinyin --with-r --with-tone
+mfa train <data/wav/> MFA/pinyin.dict MFA/mandarin.zip <data/TextGrid/>
+```
+
+（可选）如果已经有MFA模型了可以执行这一步以节约时间，但还是建议从头开始训练。
+
+```shell
+mfa align <data/wav/speaker_name/split/> MFA/pinyin.dict MFA/mandarin.zip <data/TextGrid/speaker_name/>
 ```
 
 > 如果再使用需要加`--clean`
@@ -597,8 +608,16 @@ pip install sounddevice
 启动GUI界面：
 （从项目根目录启动）
 
+动态模型启动（开发者测试用）
+
 ```shell
 python gui/main2.py
+```
+
+静态模型启动（用户使用）
+
+```shell
+python gui/main_static.py
 ```
 
 ## 6. TODO list
