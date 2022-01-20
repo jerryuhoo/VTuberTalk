@@ -27,17 +27,20 @@ from paddlespeech.s2t.utils.dynamic_import import dynamic_import
 from paddlespeech.t2s.frontend import English
 from paddlespeech.t2s.frontend.zh_frontend import Frontend
 from paddlespeech.t2s.modules.normalizer import ZScore
-
+import sys
+sys.path.append("./")
 model_alias = {
     # acoustic model
     "speedyspeech":
     "paddlespeech.t2s.models.speedyspeech:SpeedySpeech",
     "speedyspeech_inference":
     "paddlespeech.t2s.models.speedyspeech:SpeedySpeechInference",
+    # "fastspeech2":
+    # "paddlespeech.t2s.models.fastspeech2:FastSpeech2",
     "fastspeech2":
-    "paddlespeech.t2s.models.fastspeech2:FastSpeech2",
+    "train.models.fastspeech2:FastSpeech2",
     "fastspeech2_inference":
-    "paddlespeech.t2s.models.fastspeech2:FastSpeech2Inference",
+    "train.models.fastspeech2:FastSpeech2Inference",
     # voc
     "pwgan":
     "paddlespeech.t2s.models.parallel_wavegan:PWGGenerator",
