@@ -29,7 +29,7 @@ from paddlespeech.t2s.modules.nets_utils import make_non_pad_mask
 from paddlespeech.t2s.modules.nets_utils import make_pad_mask
 from paddlespeech.t2s.modules.predictor.duration_predictor import DurationPredictor
 from paddlespeech.t2s.modules.predictor.duration_predictor import DurationPredictorLoss
-from paddlespeech.t2s.modules.predictor.length_regulator import LengthRegulator
+# from paddlespeech.t2s.modules.predictor.length_regulator import LengthRegulator
 from paddlespeech.t2s.modules.predictor.variance_predictor import VariancePredictor
 from paddlespeech.t2s.modules.tacotron2.decoder import Postnet
 from paddlespeech.t2s.modules.transformer.encoder import ConformerEncoder
@@ -38,7 +38,7 @@ from paddlespeech.t2s.modules.transformer.encoder import TransformerEncoder
 import sys
 sys.path.append("train/modules")
 from style_encoder import VAE, StyleEncoder
-
+from length_regulator import LengthRegulator
 class FastSpeech2(nn.Layer):
     """FastSpeech2 module.
 
@@ -713,7 +713,7 @@ class FastSpeech2(nn.Layer):
             hs = hs + e_embs + p_embs
 
             # (B, Lmax, adim)
-            hs = self.length_regulator(hs, d_outs, alpha)
+            hs = self.length_regulator(hs, d_outs, alpha, is_inference=True)
         else:
             d_outs = self.duration_predictor(hs, d_masks)
             # use groundtruth in training
@@ -724,7 +724,7 @@ class FastSpeech2(nn.Layer):
             hs = hs + e_embs + p_embs
 
             # (B, Lmax, adim)
-            hs = self.length_regulator(hs, ds)
+            hs = self.length_regulator(hs, ds, is_inference=False)
 
         # forward decoder
         if olens is not None and not is_inference:
