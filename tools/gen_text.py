@@ -44,6 +44,7 @@ def process(path, lang, sr):
 
                 with open(os.path.join(path, file_name + ".txt"), "w") as f:
                     f.write(text)
+                f.close()
             except ValueError as e:
                 print("cannot recognize")
                 os.replace(os.path.join(path, file), os.path.join(path, "../unrecognized", file))
