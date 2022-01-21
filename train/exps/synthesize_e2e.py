@@ -41,6 +41,10 @@ model_alias = {
     "train.models.fastspeech2:FastSpeech2",
     "fastspeech2_inference":
     "train.models.fastspeech2:FastSpeech2Inference",
+    "tacotron2":
+    "paddlespeech.t2s.models.new_tacotron2:Tacotron2",
+    "tacotron2_inference":
+    "paddlespeech.t2s.models.new_tacotron2:Tacotron2Inference",
     # voc
     "pwgan":
     "paddlespeech.t2s.models.parallel_wavegan:PWGGenerator",
@@ -128,7 +132,12 @@ def evaluate(args):
             idim=vocab_size, odim=odim, spk_num=spk_num, **am_config["model"])
     elif am_name == 'speedyspeech':
         am = am_class(
-            vocab_size=vocab_size, tone_size=tone_size, spk_num=spk_num, **am_config["model"])
+            vocab_size=vocab_size,
+            tone_size=tone_size,
+            spk_num=spk_num,
+            **am_config["model"])
+    elif am_name == 'tacotron2':
+        am = am_class(idim=vocab_size, odim=odim, **am_config["model"])
 
     am.set_state_dict(paddle.load(args.am_ckpt)["main_params"])
     am.eval()
@@ -168,27 +177,31 @@ def evaluate(args):
                         InputSpec([-1], dtype=paddle.int64),
                         InputSpec([1], dtype=paddle.int64)
                     ])
-                paddle.jit.save(am_inference,
-                                os.path.join(args.inference_dir, args.am))
-                am_inference = paddle.jit.load(
-                    os.path.join(args.inference_dir, args.am))
             else:
                 am_inference = jit.to_static(
                     am_inference,
                     input_spec=[InputSpec([-1], dtype=paddle.int64)])
-                paddle.jit.save(am_inference,
-                                os.path.join(args.inference_dir, args.am))
-                am_inference = paddle.jit.load(
-                    os.path.join(args.inference_dir, args.am))
+            paddle.jit.save(am_inference,
+                            os.path.join(args.inference_dir, args.am))
+            am_inference = paddle.jit.load(
+                os.path.join(args.inference_dir, args.am))
         elif am_name == 'speedyspeech':
-            am_inference = jit.to_static(
-                am_inference,
-                input_spec=[
-                    InputSpec([-1], dtype=paddle.int64), # text
-                    InputSpec([-1], dtype=paddle.int64), # tone
-                    None, # duration
-                    InputSpec([-1], dtype=paddle.int64) # spk_id
-                ])
+            if am_dataset in {"aishell3", "vctk"} and args.speaker_dict:
+                am_inference = jit.to_static(
+                    am_inference,
+                    input_spec=[
+                        InputSpec([-1], dtype=paddle.int64),  # text
+                        InputSpec([-1], dtype=paddle.int64),  # tone
+                        None,  # duration
+                        InputSpec([-1], dtype=paddle.int64)  # spk_id
+                    ])
+            else:
+                am_inference = jit.to_static(
+                    am_inference,
+                    input_spec=[
+                        InputSpec([-1], dtype=paddle.int64),
+                        InputSpec([-1], dtype=paddle.int64)
+                    ])
 
             paddle.jit.save(am_inference,
                             os.path.join(args.inference_dir, args.am))
@@ -240,9 +253,15 @@ def evaluate(args):
                     else:
                         mel = am_inference(part_phone_ids)
                 elif am_name == 'speedyspeech':
-                    spk_id = paddle.to_tensor(args.spk_id)
                     part_tone_ids = tone_ids[i]
-                    mel = am_inference(part_phone_ids, part_tone_ids, spk_id)
+                    if am_dataset in {"aishell3", "vctk"}:
+                        spk_id = paddle.to_tensor(args.spk_id)
+                        mel = am_inference(part_phone_ids, part_tone_ids,
+                                           spk_id)
+                    else:
+                        mel = am_inference(part_phone_ids, part_tone_ids)
+                elif am_name == 'tacotron2':
+                    mel = am_inference(part_phone_ids)
                 # vocoder
                 wav = voc_inference(mel)
                 if flags == 0:
@@ -267,8 +286,8 @@ def main():
         type=str,
         default='fastspeech2_csmsc',
         choices=[
-            'speedyspeech_csmsc', 'fastspeech2_csmsc', 'fastspeech2_ljspeech',
-            'fastspeech2_aishell3', 'fastspeech2_vctk'
+            'speedyspeech_csmsc', 'speedyspeech_aishell3', 'fastspeech2_csmsc',
+            'fastspeech2_ljspeech', 'fastspeech2_aishell3', 'fastspeech2_vctk'
         ],
         help='Choose acoustic model type of tts task.')
     parser.add_argument(
