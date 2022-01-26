@@ -1,8 +1,7 @@
 import sys
 import os
 from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QPushButton, QCheckBox, QLineEdit, QMessageBox, QComboBox, QLabel, QFileDialog
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import pyqtSlot, QUrl
+from PyQt5.QtCore import pyqtSlot
 import sounddevice as sd
 
 # from paddle
@@ -12,8 +11,6 @@ from pathlib import Path
 import numpy as np
 import paddle
 import soundfile as sf
-import yaml
-from yacs.config import CfgNode
 
 import sys
 
@@ -21,17 +18,10 @@ sys.path.append("train/frontend")
 from zh_frontend import Frontend
 
 sys.path.append("train/models")
-from fastspeech2 import FastSpeech2
-from speedyspeech import SpeedySpeech
 # from paddlespeech.t2s.models.fastspeech2 import FastSpeech2
 
 # from paddlespeech.t2s.models.fastspeech2 import StyleFastSpeech2Inference
 
-from fastspeech2 import StyleFastSpeech2Inference
-from speedyspeech import SpeedySpeechInference
-from paddlespeech.t2s.models.hifigan import HiFiGANInference
-from paddlespeech.t2s.models.parallel_wavegan import PWGInference
-import paddlespeech.t2s.models as ttsModels
 from paddlespeech.t2s.modules.normalizer import ZScore
 from paddlespeech.t2s.data.get_feats import LogMelFBank
 
@@ -144,8 +134,8 @@ class App(QMainWindow):
         self.voc_model_label.setText("vocoder：")
 
         self.voc_model_combo = QComboBox(self)
-        self.voc_model_combo.addItem("parallel wavegan")
-        self.voc_model_combo.addItem("hifigan")
+        self.voc_model_combo.addItem("hifigan_fs")
+        self.voc_model_combo.addItem("hifigan_ss")
 
         self.voc_model_combo.move(240, 240)
         self.voc_model_combo.resize(120, 40)
@@ -180,11 +170,11 @@ class App(QMainWindow):
 
         self.voice_cloning = None
 
-        self.onVoiceComboboxChanged(self.voice_combo.currentText())
         self.onTTSStyleComboboxChanged(self.tts_style_combo.currentText())
         self.onTTSSpeedComboboxChanged(self.tts_speed_combo.currentText())
         self.onAcousticModelComboboxChanged(self.acoustic_model_combo.currentText())
         self.onVocModelComboboxChanged(self.voc_model_combo.currentText())
+        self.onVoiceComboboxChanged(self.voice_combo.currentText())
         print("gst,", self.use_gst)
         print("vae,", self.use_vae)
 
@@ -204,10 +194,10 @@ class App(QMainWindow):
     def loadAcousticModel(self):
         # acoustic model
         if self.acoustic_model == "fastspeech2":
-            self.phones_dict = "pretrained_models/fastspeech2_azi_nanami_static/phone_id_map.txt"
-            self.speaker_dict = "pretrained_models/fastspeech2_azi_nanami_static/speaker_id_map.txt"
+            self.phones_dict = "pretrained_models/style_fastspeech2_azi_nanami_static/phone_id_map.txt"
+            self.speaker_dict = "pretrained_models/style_fastspeech2_azi_nanami_static/speaker_id_map.txt"
             self.am_inference = paddle.jit.load(
-                            os.path.join("pretrained_models/fastspeech2_azi_nanami_static", "fastspeech2_aishell3"))
+                            os.path.join("pretrained_models/style_fastspeech2_azi_nanami_static", "fastspeech2_aishell3"))
                 
         elif self.acoustic_model == "speedyspeech":
             self.tones_dict = "pretrained_models/speedyspeech_azi_nanami_static/tone_id_map.txt"
@@ -239,9 +229,9 @@ class App(QMainWindow):
 
     def loadVocoderModel(self):   
         # vocoder
-        if self.vocoder == "pwg":
-            self.voc_inference = paddle.jit.load(os.path.join("pretrained_models/pwg_baker_static_0.4", "pwgan_csmsc"))
-        elif self.vocoder == "hifigan":
+        if self.vocoder == "hifigan_fs":
+            self.voc_inference = paddle.jit.load(os.path.join("pretrained_models/style_fastspeech2_azi_nanami_static", "hifigan_csmsc"))
+        elif self.vocoder == "hifigan_ss":
             self.voc_inference = paddle.jit.load(os.path.join("pretrained_models/speedyspeech_azi_nanami_static", "hifigan_csmsc"))
 
     @pyqtSlot()
@@ -257,19 +247,6 @@ class App(QMainWindow):
 
         sentences = []
         sentences.append(("001", textboxValue))
-
-        if self.acoustic_model == "fastspeech2":
-            stat = np.load(self.fastspeech2_stat)
-            mu, std = stat
-            mu = paddle.to_tensor(mu)
-            std = paddle.to_tensor(std)
-            fastspeech2_normalizer = ZScore(mu, std)
-
-        if self.acoustic_model == "fastspeech2":
-            fastspeech2_inference = StyleFastSpeech2Inference(
-                fastspeech2_normalizer, self.model, self.fastspeech2_pitch_stat,
-                self.fastspeech2_energy_stat)
-            fastspeech2_inference.eval()
 
         robot = False
         durations = None
@@ -422,10 +399,16 @@ class App(QMainWindow):
 
 
     def onVoiceComboboxChanged(self, text):
-        if text == "阿梓":
-            self.spk_id = 175
-        elif text == "海子姐":
-            self.spk_id = 176
+        if self.acoustic_model == "speedyspeech":
+            if text == "阿梓":
+                self.spk_id = 175
+            elif text == "海子姐":
+                self.spk_id = 176
+        elif self.acoustic_model == "fastspeech2":
+            if text == "阿梓":
+                self.spk_id = 174
+            elif text == "海子姐":
+                self.spk_id = 176
 
     def onTTSStyleComboboxChanged(self, text):
         if text == "正常":
@@ -471,10 +454,10 @@ class App(QMainWindow):
         self.loadFrontend()
 
     def onVocModelComboboxChanged(self, text):
-        if text == "parallel wavegan":
-            self.vocoder = "pwg"
-        elif text == "hifigan":
-            self.vocoder = "hifigan"
+        if text == "hifigan_fs":
+            self.vocoder = "hifigan_fs"
+        elif text == "hifigan_ss":
+            self.vocoder = "hifigan_ss"
         self.loadVocoderModel()
 
     def playAudioFile(self):
