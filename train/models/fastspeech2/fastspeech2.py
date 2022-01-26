@@ -546,6 +546,12 @@ class FastSpeech2(nn.Layer):
             init_enc_alpha=init_enc_alpha,
             init_dec_alpha=init_dec_alpha, )
 
+    def denorm(self, data, mean, std):
+        return data * std + mean
+
+    def norm(self, data, mean, std):
+        return (data - mean) / std
+
     def forward(
             self,
             text: paddle.Tensor,
@@ -644,6 +650,17 @@ class FastSpeech2(nn.Layer):
                  ds: paddle.Tensor=None,
                  ps: paddle.Tensor=None,
                  es: paddle.Tensor=None,
+                 ds_scale: paddle.Tensor=None,
+                 ps_scale: paddle.Tensor=None,
+                 es_scale: paddle.Tensor=None,
+                 ds_bias: paddle.Tensor=None,
+                 ps_bias: paddle.Tensor=None,
+                 es_bias: paddle.Tensor=None,
+                 pitch_mean: paddle.Tensor=None,
+                 pitch_std: paddle.Tensor=None,
+                 energy_mean: paddle.Tensor=None,
+                 energy_std: paddle.Tensor=None,
+                 robot: paddle.Tensor=None,
                  is_inference: bool=False,
                  alpha: float=1.0,
                  spk_emb=None,
@@ -692,6 +709,20 @@ class FastSpeech2(nn.Layer):
         else:
             e_outs = self.energy_predictor(hs, d_masks.unsqueeze(-1))
 
+        if ds_scale is None:
+            ds_scale = paddle.to_tensor(1.0, dtype='float32')
+        if ps_scale is None:
+            ps_scale = paddle.to_tensor(1.0, dtype='float32')
+        if es_scale is None:
+            es_scale = paddle.to_tensor(1.0, dtype='float32')
+
+        if ds_bias is None:
+            ds_bias = paddle.to_tensor(0.0, dtype='float32')
+        if ps_bias is None:
+            ps_bias = paddle.to_tensor(0.0, dtype='float32')
+        if es_bias is None:
+            es_bias = paddle.to_tensor(0.0, dtype='float32')
+
         if is_inference:
             # (B, Tmax)
             if ds is not None:
@@ -702,6 +733,24 @@ class FastSpeech2(nn.Layer):
                 p_outs = ps
             if es is not None:
                 e_outs = es
+
+            if robot == paddle.to_tensor(True, dtype='bool'):
+                # set normed pitch to zeros have the same effect with set denormd ones to mean
+                p_outs = paddle.zeros(paddle.shape(p_outs))
+
+            # set durations
+            d_outs = d_outs / ds_scale + ds_bias
+            
+            # set pitch
+            p_outs = paddle.exp(
+                self.denorm(p_outs, pitch_mean, pitch_std))
+            p_outs = p_outs * ps_scale + ps_bias
+            p_outs = self.norm(paddle.log(p_outs), pitch_mean, pitch_std)
+            
+            # set energy
+            e_outs = self.denorm(e_outs, energy_mean, energy_std)
+            e_outs = e_outs * es_scale + es_bias
+            e_outs = self.norm(e_outs, energy_mean, energy_std)
 
             # use prediction in inference
             # (B, Tmax, 1)
@@ -756,9 +805,17 @@ class FastSpeech2(nn.Layer):
             self,
             text: paddle.Tensor,
             speech: paddle.Tensor=None,
-            durations: paddle.Tensor=None,
-            pitch: paddle.Tensor=None,
-            energy: paddle.Tensor=None,
+            durations_scale: paddle.Tensor=None,
+            pitch_scale: paddle.Tensor=None,
+            energy_scale: paddle.Tensor=None,
+            durations_bias: paddle.Tensor=None,
+            pitch_bias: paddle.Tensor=None,
+            energy_bias: paddle.Tensor=None,
+            pitch_mean: paddle.Tensor=None,
+            pitch_std: paddle.Tensor=None,
+            energy_mean: paddle.Tensor=None,
+            energy_std: paddle.Tensor=None,
+            robot: paddle.Tensor=None,
             alpha: float=1.0,
             use_teacher_forcing: bool=False,
             spk_emb=None,
@@ -799,7 +856,7 @@ class FastSpeech2(nn.Layer):
         # input of embedding must be int64
         x = paddle.cast(text, 'int64')
         y = speech
-        d, p, e = durations, pitch, energy
+
         # setup batch axis
         ilens = paddle.shape(x)[0]
 
@@ -813,36 +870,28 @@ class FastSpeech2(nn.Layer):
 
         if tone_id is not None:
             tone_id = tone_id.unsqueeze(0)
-
-        if use_teacher_forcing:
-            # use groundtruth of duration, pitch, and energy
-            ds = d.unsqueeze(0) if d is not None else None
-            ps = p.unsqueeze(0) if p is not None else None
-            es = e.unsqueeze(0) if e is not None else None
-
-            # (1, L, odim)
-            _, outs, d_outs, p_outs, e_outs, mu, logvar, z = self._forward(
-                xs,
-                ilens,
-                ys,
-                ds=ds,
-                ps=ps,
-                es=es,
-                spk_emb=spk_emb,
-                spk_id=spk_id,
-                tone_id=tone_id,
-                is_inference=True)
-        else:
-            # (1, L, odim)
-            _, outs, d_outs, p_outs, e_outs, mu, logvar, z = self._forward(
-                xs,
-                ilens,
-                ys,
-                is_inference=True,
-                alpha=alpha,
-                spk_emb=spk_emb,
-                spk_id=spk_id,
-                tone_id=tone_id)
+        
+        # (1, L, odim)
+        _, outs, d_outs, p_outs, e_outs, mu, logvar, z = self._forward(
+            xs,
+            ilens,
+            ys,
+            ds_scale=durations_scale,
+            ps_scale=pitch_scale,
+            es_scale=energy_scale,
+            ds_bias=durations_bias,
+            ps_bias=pitch_bias,
+            es_bias=energy_bias,
+            pitch_mean=pitch_mean,
+            pitch_std=pitch_std,
+            energy_mean=energy_mean,
+            energy_std=energy_std,
+            robot=robot,
+            is_inference=True,
+            alpha=alpha,
+            spk_emb=spk_emb,
+            spk_id=spk_id,
+            tone_id=tone_id)
         return outs[0], d_outs[0], p_outs[0], e_outs[0], mu, logvar, z
 
     def _integrate_with_spk_embed(self, hs, spk_emb):
@@ -984,19 +1033,15 @@ class StyleFastSpeech2Inference(FastSpeech2Inference):
 
     def forward(self,
                 text: paddle.Tensor,
-                speech: paddle.Tensor,
-                durations: Union[paddle.Tensor, np.ndarray]=None,
-                durations_scale: Union[int, float]=None,
-                durations_bias: Union[int, float]=None,
-                pitch: Union[paddle.Tensor, np.ndarray]=None,
-                pitch_scale: Union[int, float]=None,
-                pitch_bias: Union[int, float]=None,
-                energy: Union[paddle.Tensor, np.ndarray]=None,
-                energy_scale: Union[int, float]=None,
-                energy_bias: Union[int, float]=None,
-                robot: bool=False,
-                spk_emb=None,
-                spk_id=None):
+                durations_scale: paddle.Tensor=None,
+                durations_bias: paddle.Tensor=None,
+                pitch_scale: paddle.Tensor=None,
+                pitch_bias: paddle.Tensor=None,
+                energy_scale: paddle.Tensor=None,
+                energy_bias: paddle.Tensor=None,
+                robot: paddle.Tensor=None,
+                spk_id: paddle.Tensor=None,
+                speech: paddle.Tensor=None):
         """
         Parameters
         ----------
@@ -1027,69 +1072,20 @@ class StyleFastSpeech2Inference(FastSpeech2Inference):
         Tensor
             Output sequence of features (L, odim).
         """
-
-        normalized_mel, d_outs, p_outs, e_outs, mu, logvar, z = self.acoustic_model.inference(
-            text, 
-            speech=speech, 
-            durations=None, 
-            pitch=None, 
-            energy=None, 
-            spk_emb=spk_emb, 
-            spk_id=spk_id)
-        # priority: groundtruth > scale/bias > previous output
-        # set durations
-        if isinstance(durations, np.ndarray):
-            durations = paddle.to_tensor(durations)
-        elif isinstance(durations, paddle.Tensor):
-            durations = durations
-        elif durations_scale or durations_bias:
-            durations_scale = durations_scale if durations_scale is not None else 1
-            durations_bias = durations_bias if durations_bias is not None else 0
-            durations = durations_scale * d_outs + durations_bias
-        else:
-            durations = d_outs
-
-        if robot:
-            # set normed pitch to zeros have the same effect with set denormd ones to mean
-            pitch = paddle.zeros(p_outs.shape)
-
-        # set pitch, can overwrite robot set  
-        if isinstance(pitch, np.ndarray):
-            pitch = paddle.to_tensor(pitch)
-        elif isinstance(pitch, paddle.Tensor):
-            pitch = pitch
-        elif pitch_scale or pitch_bias:
-            pitch_scale = pitch_scale if pitch_scale is not None else 1
-            pitch_bias = pitch_bias if pitch_bias is not None else 0
-            p_Hz = paddle.exp(
-                self.denorm(p_outs, self.pitch_mean, self.pitch_std))
-            p_HZ = pitch_scale * p_Hz + pitch_bias
-            pitch = self.norm(paddle.log(p_HZ), self.pitch_mean, self.pitch_std)
-        else:
-            pitch = p_outs
-
-        # set energy
-        if isinstance(energy, np.ndarray):
-            energy = paddle.to_tensor(energy)
-        elif isinstance(energy, paddle.Tensor):
-            energy = energy
-        elif energy_scale or energy_bias:
-            energy_scale = energy_scale if energy_scale is not None else 1
-            energy_bias = energy_bias if energy_bias is not None else 0
-            e_dnorm = self.denorm(e_outs, self.energy_mean, self.energy_std)
-            e_dnorm = energy_scale * e_dnorm + energy_bias
-            energy = self.norm(e_dnorm, self.energy_mean, self.energy_std)
-        else:
-            energy = e_outs
-
         normalized_mel, d_outs, p_outs, e_outs, mu, logvar, z = self.acoustic_model.inference(
             text,
             speech=speech,
-            durations=durations,
-            pitch=pitch,
-            energy=energy,
-            use_teacher_forcing=True,
-            spk_emb=spk_emb,
+            durations_scale=durations_scale,
+            pitch_scale=pitch_scale,
+            energy_scale=energy_scale,
+            durations_bias=durations_bias,
+            pitch_bias=pitch_bias,
+            energy_bias=energy_bias,
+            pitch_mean=self.pitch_mean,
+            pitch_std=self.pitch_std,
+            energy_mean=self.energy_mean,
+            energy_std=self.energy_std,
+            robot=robot,
             spk_id=spk_id)
 
         logmel = self.normalizer.inverse(normalized_mel)

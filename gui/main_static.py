@@ -204,9 +204,10 @@ class App(QMainWindow):
     def loadAcousticModel(self):
         # acoustic model
         if self.acoustic_model == "fastspeech2":
-            return
-            self.phones_dict = ""
-            self.speaker_dict = ""
+            self.phones_dict = "pretrained_models/fastspeech2_azi_nanami_static/phone_id_map.txt"
+            self.speaker_dict = "pretrained_models/fastspeech2_azi_nanami_static/speaker_id_map.txt"
+            self.am_inference = paddle.jit.load(
+                            os.path.join("pretrained_models/fastspeech2_azi_nanami_static", "fastspeech2_aishell3"))
                 
         elif self.acoustic_model == "speedyspeech":
             self.tones_dict = "pretrained_models/speedyspeech_azi_nanami_static/tone_id_map.txt"
@@ -235,17 +236,6 @@ class App(QMainWindow):
         vocab_size = len(phn_id)
         print("vocab_size:", vocab_size)
 
-        if self.acoustic_model == "fastspeech2":
-            print("fastspeech2")
-            odim = self.fastspeech2_config.n_mels
-            self.model = FastSpeech2(
-                idim=vocab_size, odim=odim, **self.fastspeech2_config["model"], spk_num=self.spk_num, use_gst=self.use_gst, use_vae=self.use_vae)
-
-            self.model.set_state_dict(
-                paddle.load(self.fastspeech2_checkpoint)["main_params"])
-
-            self.model.eval()
-            print("fastspeech2 model done!")
 
     def loadVocoderModel(self):   
         # vocoder
@@ -283,14 +273,14 @@ class App(QMainWindow):
 
         robot = False
         durations = None
-        durations_scale = None
-        durations_bias = None
+        durations_scale = 1.0
+        durations_bias = 0.0
         pitch = None
-        pitch_scale = None
-        pitch_bias = None
+        pitch_scale = 1.0
+        pitch_bias = 0.0
         energy = None
-        energy_scale = None
-        energy_bias = None
+        energy_scale = 1.0
+        energy_bias = 0.0
 
         if self.tts_style_combo.currentText() == "机器楞":
             self.style = "robot"
@@ -311,19 +301,19 @@ class App(QMainWindow):
             # all pitch should be the same, we use mean here
             robot = True
         if self.speed == "1.2xspeed":
-            durations_scale = 1 / 1.2
+            durations_scale = 1.2
         elif self.speed == "1.0xspeed":
             durations_scale = 1
         elif self.speed == "0.8xspeed":
-            durations_scale = 1 / 0.8
+            durations_scale = 0.8
         elif self.speed == "3.0xspeed":
-            durations_scale = 1 / 3.0
+            durations_scale = 3.0
         if self.style == "high_voice":
             pitch_scale = 1.3
         elif self.style == "low_voice":
             pitch_scale = 0.7
         elif self.style == "normal":
-            pitch_scale = 1                         
+            pitch_scale = 1
          
         record = None
         try:
@@ -377,22 +367,14 @@ class App(QMainWindow):
 
             with paddle.no_grad():
                 if self.acoustic_model == "fastspeech2":
-                    mel = fastspeech2_inference(
-                        phone_ids,
-                        speech=speech,
-                        durations=durations,
-                        durations_scale=durations_scale,
-                        durations_bias=durations_bias,
-                        pitch=pitch,
-                        pitch_scale=pitch_scale,
-                        pitch_bias=pitch_bias,
-                        energy=energy,
-                        energy_scale=energy_scale,
-                        energy_bias=energy_bias,
-                        robot=robot,
-                        spk_emb=None,
-                        spk_id=self.spk_id
-                        )
+                    d_scale = paddle.to_tensor(durations_scale, dtype='float32')
+                    p_scale = paddle.to_tensor(pitch_scale, dtype='float32')
+                    e_scale = paddle.to_tensor(energy_scale, dtype='float32')
+                    d_bias = paddle.to_tensor(durations_bias, dtype='float32')
+                    p_bias = paddle.to_tensor(pitch_bias, dtype='float32')
+                    e_bias = paddle.to_tensor(energy_bias, dtype='float32')
+                    robot = paddle.to_tensor(robot, dtype='bool')
+                    mel = self.am_inference(phone_ids, d_scale, d_bias, p_scale, p_bias, e_scale, e_bias, robot, self.spk_id)
                 elif self.acoustic_model == "speedyspeech":
                     tone_ids = paddle.to_tensor(input_ids["tone_ids"][0])
                     mel = self.am_inference(phone_ids, tone_ids, self.spk_id)

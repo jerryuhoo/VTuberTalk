@@ -27,8 +27,12 @@ from paddlespeech.s2t.utils.dynamic_import import dynamic_import
 from paddlespeech.t2s.frontend import English
 from paddlespeech.t2s.frontend.zh_frontend import Frontend
 from paddlespeech.t2s.modules.normalizer import ZScore
+from paddlespeech.t2s.data.get_feats import LogMelFBank
 import sys
 sys.path.append("./")
+import librosa
+from sklearn.preprocessing import StandardScaler
+
 model_alias = {
     # acoustic model
     "speedyspeech":
@@ -41,6 +45,8 @@ model_alias = {
     "train.models.fastspeech2:FastSpeech2",
     "fastspeech2_inference":
     "train.models.fastspeech2:FastSpeech2Inference",
+    "fastspeech2_style_inference":
+    "train.models.fastspeech2:StyleFastSpeech2Inference",
     "tacotron2":
     "paddlespeech.t2s.models.new_tacotron2:Tacotron2",
     "tacotron2_inference":
@@ -125,7 +131,11 @@ def evaluate(args):
     am_dataset = args.am[args.am.rindex('_') + 1:]
 
     am_class = dynamic_import(am_name, model_alias)
-    am_inference_class = dynamic_import(am_name + '_inference', model_alias)
+    
+    if args.use_gst or args.use_style:
+        am_inference_class = dynamic_import(am_name + '_style_inference', model_alias)
+    else:
+        am_inference_class = dynamic_import(am_name + '_inference', model_alias)
 
     if am_name == 'fastspeech2':
         am = am_class(
@@ -145,7 +155,15 @@ def evaluate(args):
     am_mu = paddle.to_tensor(am_mu)
     am_std = paddle.to_tensor(am_std)
     am_normalizer = ZScore(am_mu, am_std)
-    am_inference = am_inference_class(am_normalizer, am)
+    if args.use_gst or args.use_style:
+        fastspeech2_pitch_stat = args.pitch_stat
+        fastspeech2_energy_stat = args.energy_stat
+        am_inference = am_inference_class(
+                am_normalizer, am, fastspeech2_pitch_stat,
+                fastspeech2_energy_stat)
+    else:
+        am_inference = am_inference_class(am_normalizer, am)
+    
     am_inference.eval()
     print("acoustic model done!")
 
@@ -170,12 +188,41 @@ def evaluate(args):
     if args.inference_dir:
         # acoustic model
         if am_name == 'fastspeech2':
-            if am_dataset in {"aishell3", "vctk"} and args.speaker_dict:
+            if am_dataset in {"aishell3", "vctk"} and args.speaker_dict and not args.use_gst and not args.use_style:
                 am_inference = jit.to_static(
                     am_inference,
                     input_spec=[
                         InputSpec([-1], dtype=paddle.int64),
                         InputSpec([1], dtype=paddle.int64)
+                    ])
+            elif am_dataset in {"aishell3", "vctk"} and args.speaker_dict and args.use_gst:
+                am_inference = jit.to_static(
+                    am_inference,
+                    input_spec=[
+                        InputSpec([-1], dtype=paddle.int64), # text
+                        InputSpec([1], dtype=paddle.float32),
+                        InputSpec([1], dtype=paddle.float32),
+                        InputSpec([1], dtype=paddle.float32),
+                        InputSpec([1], dtype=paddle.float32),
+                        InputSpec([1], dtype=paddle.float32),
+                        InputSpec([1], dtype=paddle.float32),
+                        InputSpec([1], dtype=paddle.bool),
+                        InputSpec([1], dtype=paddle.int64), # spk_id
+                        InputSpec([-1], dtype=paddle.float32), # ref audio
+                    ])
+            elif am_dataset in {"aishell3", "vctk"} and args.speaker_dict and args.use_style:
+                am_inference = jit.to_static(
+                    am_inference,
+                    input_spec=[
+                        InputSpec([-1], dtype=paddle.int64), # text
+                        InputSpec([1], dtype=paddle.float32),
+                        InputSpec([1], dtype=paddle.float32),
+                        InputSpec([1], dtype=paddle.float32),
+                        InputSpec([1], dtype=paddle.float32),
+                        InputSpec([1], dtype=paddle.float32),
+                        InputSpec([1], dtype=paddle.float32),
+                        InputSpec([1], dtype=paddle.bool),
+                        InputSpec([1], dtype=paddle.int64) # spk_id
                     ])
             else:
                 am_inference = jit.to_static(
@@ -190,10 +237,10 @@ def evaluate(args):
                 am_inference = jit.to_static(
                     am_inference,
                     input_spec=[
-                        InputSpec([-1], dtype=paddle.int64),  # text
-                        InputSpec([-1], dtype=paddle.int64),  # tone
-                        None,  # duration
-                        InputSpec([-1], dtype=paddle.int64)  # spk_id
+                        InputSpec([-1], dtype=paddle.int64), # text
+                        InputSpec([-1], dtype=paddle.int64), # tone
+                        None, # duration
+                        InputSpec([-1], dtype=paddle.int64) # spk_id
                     ])
             else:
                 am_inference = jit.to_static(
@@ -247,9 +294,30 @@ def evaluate(args):
                 # acoustic model
                 if am_name == 'fastspeech2':
                     # multi speaker
-                    if am_dataset in {"aishell3", "vctk"}:
+                    if am_dataset in {"aishell3", "vctk"} and not args.use_gst and not args.use_style:
                         spk_id = paddle.to_tensor(args.spk_id)
                         mel = am_inference(part_phone_ids, spk_id)
+                    elif am_dataset in {"aishell3", "vctk"} and args.use_gst:
+                        speech = load_ref(args)
+                        spk_id = paddle.to_tensor(args.spk_id, dtype='int64')
+                        d_scale = paddle.to_tensor(1.3, dtype='float32')
+                        p_scale = paddle.to_tensor(1.3, dtype='float32')
+                        e_scale = paddle.to_tensor(1.3, dtype='float32')
+                        d_bias = paddle.to_tensor(0.0, dtype='float32')
+                        p_bias = paddle.to_tensor(0.0, dtype='float32')
+                        e_bias = paddle.to_tensor(0.0, dtype='float32')
+                        robot = paddle.to_tensor(False, dtype='bool')
+                        mel = am_inference(part_phone_ids, d_scale, d_bias, p_scale, p_bias, e_scale, e_bias, robot, spk_id, speech)
+                    elif am_dataset in {"aishell3", "vctk"} and args.use_style:
+                        spk_id = paddle.to_tensor(args.spk_id, dtype='int64')
+                        d_scale = paddle.to_tensor(1.3, dtype='float32')
+                        p_scale = paddle.to_tensor(1.3, dtype='float32')
+                        e_scale = paddle.to_tensor(1.3, dtype='float32')
+                        d_bias = paddle.to_tensor(0.0, dtype='float32')
+                        p_bias = paddle.to_tensor(0.0, dtype='float32')
+                        e_bias = paddle.to_tensor(0.0, dtype='float32')
+                        robot = paddle.to_tensor(False, dtype='bool')
+                        mel = am_inference(part_phone_ids, d_scale, d_bias, p_scale, p_bias, e_scale, e_bias, robot, spk_id)
                     else:
                         mel = am_inference(part_phone_ids)
                 elif am_name == 'speedyspeech':
@@ -275,6 +343,36 @@ def evaluate(args):
             samplerate=am_config.fs)
         print(f"{utt_id} done!")
 
+def load_ref(args):
+    with open(args.am_config) as f:
+        am_config = CfgNode(yaml.safe_load(f))
+    wav, _ = librosa.load("ref_audio.wav", sr=am_config.fs)
+    if len(wav.shape) != 1 or np.abs(wav).max() > 1.0:
+        return None
+    assert len(wav.shape) == 1, f"ref audio is not a mono-channel audio."
+    assert np.abs(wav).max(
+    ) <= 1.0, f"ref audio is seems to be different that 16 bit PCM."
+    
+    mel_extractor = LogMelFBank(
+        sr=am_config.fs,
+        n_fft=am_config.n_fft,
+        hop_length=am_config.n_shift,
+        win_length=am_config.win_length,
+        window=am_config.window,
+        n_mels=am_config.n_mels,
+        fmin=am_config.fmin,
+        fmax=am_config.fmax)
+
+    logmel = mel_extractor.get_log_mel_fbank(wav)
+    # normalize, restore scaler
+    speech_scaler = StandardScaler()
+    speech_scaler.mean_ = np.load(args.am_stat)[0]
+    speech_scaler.scale_ = np.load(args.am_stat)[1]
+    speech_scaler.n_features_in_ = speech_scaler.mean_.shape[0]
+    logmel = speech_scaler.transform(logmel)
+    
+    speech = paddle.to_tensor(logmel)
+    return speech
 
 def main():
     # parse args and config and redirect to train_sp
@@ -287,7 +385,8 @@ def main():
         default='fastspeech2_csmsc',
         choices=[
             'speedyspeech_csmsc', 'speedyspeech_aishell3', 'fastspeech2_csmsc',
-            'fastspeech2_ljspeech', 'fastspeech2_aishell3', 'fastspeech2_vctk'
+            'fastspeech2_ljspeech', 'fastspeech2_aishell3', 'fastspeech2_vctk',
+            'tacotron2_csmsc'
         ],
         help='Choose acoustic model type of tts task.')
     parser.add_argument(
@@ -307,11 +406,25 @@ def main():
         help="mean and standard deviation used to normalize spectrogram when training acoustic model."
     )
     parser.add_argument(
+        "--pitch_stat",
+        type=str,
+        default=None
+    )
+    parser.add_argument(
+        "--energy_stat",
+        type=str,
+        default=None
+    )
+    parser.add_argument(
         "--phones_dict", type=str, default=None, help="phone vocabulary file.")
     parser.add_argument(
         "--tones_dict", type=str, default=None, help="tone vocabulary file.")
     parser.add_argument(
         "--speaker_dict", type=str, default=None, help="speaker id map file.")
+    parser.add_argument(
+        "--use_gst", type=str2bool, default=False, help="use gst.")
+    parser.add_argument(
+        "--use_style", type=str2bool, default=False, help="use style inference.")
     parser.add_argument(
         '--spk_id',
         type=int,
@@ -372,6 +485,8 @@ def main():
 
     evaluate(args)
 
+def str2bool(str):
+    return True if str.lower() == 'true' else False
 
 if __name__ == "__main__":
     main()
