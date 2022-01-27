@@ -734,7 +734,7 @@ class FastSpeech2(nn.Layer):
             if es is not None:
                 e_outs = es
 
-            if robot == paddle.to_tensor(True, dtype='bool'):
+            if robot:
                 # set normed pitch to zeros have the same effect with set denormd ones to mean
                 p_outs = paddle.zeros(paddle.shape(p_outs))
 
@@ -742,15 +742,17 @@ class FastSpeech2(nn.Layer):
             d_outs = d_outs / ds_scale + ds_bias
             
             # set pitch
-            p_outs = paddle.exp(
-                self.denorm(p_outs, pitch_mean, pitch_std))
-            p_outs = p_outs * ps_scale + ps_bias
-            p_outs = self.norm(paddle.log(p_outs), pitch_mean, pitch_std)
+            if (pitch_mean and pitch_std):
+                p_outs = paddle.exp(
+                    self.denorm(p_outs, pitch_mean, pitch_std))
+                p_outs = p_outs * ps_scale + ps_bias
+                p_outs = self.norm(paddle.log(p_outs), pitch_mean, pitch_std)
             
             # set energy
-            e_outs = self.denorm(e_outs, energy_mean, energy_std)
-            e_outs = e_outs * es_scale + es_bias
-            e_outs = self.norm(e_outs, energy_mean, energy_std)
+            if (energy_mean and energy_std):
+                e_outs = self.denorm(e_outs, energy_mean, energy_std)
+                e_outs = e_outs * es_scale + es_bias
+                e_outs = self.norm(e_outs, energy_mean, energy_std)
 
             # use prediction in inference
             # (B, Tmax, 1)
