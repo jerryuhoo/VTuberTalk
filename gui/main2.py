@@ -18,7 +18,8 @@ from yacs.config import CfgNode
 import sys
 
 sys.path.append("train/frontend")
-from zh_frontend import Frontend
+# from zh_frontend import Frontend
+from mixed_frontend import Frontend
 
 sys.path.append("train/models")
 from fastspeech2 import FastSpeech2
