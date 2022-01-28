@@ -214,13 +214,13 @@ class App(QMainWindow):
                 self.fastspeech2_config_path = "exp/gst_fastspeech2_azi_nanami/default_multi.yaml"
                 self.fastspeech2_checkpoint = "exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_165560.pdz"
             else:
-                self.fastspeech2_stat = "exp/fastspeech2_bili3_aishell3/speech_stats.npy"
-                self.fastspeech2_pitch_stat = "exp/fastspeech2_bili3_aishell3/pitch_stats.npy"
-                self.fastspeech2_energy_stat = "exp/fastspeech2_bili3_aishell3/energy_stats.npy"
-                self.phones_dict = "exp/fastspeech2_bili3_aishell3/phone_id_map.txt"
-                self.speaker_dict="exp/fastspeech2_bili3_aishell3/speaker_id_map.txt"
-                self.fastspeech2_config_path = "exp/gst_fastspeech2_azi_nanami/default_multi.yaml"
-                self.fastspeech2_checkpoint = "exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_165560.pdz"
+                self.fastspeech2_stat = "exp/fastspeech2_bili3_aishell3_ljspeech/speech_stats.npy"
+                self.fastspeech2_pitch_stat = "exp/fastspeech2_bili3_aishell3_ljspeech/pitch_stats.npy"
+                self.fastspeech2_energy_stat = "exp/fastspeech2_bili3_aishell3_ljspeech/energy_stats.npy"
+                self.phones_dict = "exp/fastspeech2_bili3_aishell3_ljspeech/phone_id_map.txt"
+                self.speaker_dict="exp/fastspeech2_bili3_aishell3_ljspeech/speaker_id_map.txt"
+                self.fastspeech2_config_path = "exp/fastspeech2_bili3_aishell3_ljspeech/default_multi.yaml"
+                self.fastspeech2_checkpoint = "exp/fastspeech2_bili3_aishell3_ljspeech/checkpoints/snapshot_iter_165560.pdz"
 
             with open(self.fastspeech2_config_path) as f:
                 self.fastspeech2_config = CfgNode(yaml.safe_load(f))
@@ -305,9 +305,9 @@ class App(QMainWindow):
             config = self.pwg_config
             generator_type = "pwgan"
         elif self.vocoder == "hifigan":
-            self.hifigan_config_path = "pretrained_models/hifigan_aishell3/default.yaml"
-            self.hifigan_checkpoint = "pretrained_models/hifigan_aishell3/snapshot_iter_390000.pdz" 
-            self.hifigan_stat = "pretrained_models/hifigan_aishell3/feats_stats.npy"
+            self.hifigan_config_path = "pretrained_models/hifigan_azi_nanami/default.yaml"
+            self.hifigan_checkpoint = "pretrained_models/hifigan_azi_nanami/checkpoints/snapshot_iter_310000.pdz" 
+            self.hifigan_stat = "pretrained_models/hifigan_azi_nanami/feats_stats.npy"
             with open(self.hifigan_config_path) as f:
                 self.hifigan_config = CfgNode(yaml.safe_load(f))
             checkpoint = self.hifigan_checkpoint
@@ -474,19 +474,15 @@ class App(QMainWindow):
                 if self.acoustic_model == "fastspeech2":
                     mel = fastspeech2_inference(
                         phone_ids,
-                        speech=speech,
-                        durations=durations,
                         durations_scale=durations_scale,
                         durations_bias=durations_bias,
-                        pitch=pitch,
                         pitch_scale=pitch_scale,
                         pitch_bias=pitch_bias,
-                        energy=energy,
                         energy_scale=energy_scale,
                         energy_bias=energy_bias,
                         robot=robot,
-                        spk_emb=None,
-                        spk_id=self.spk_id
+                        spk_id=self.spk_id,
+                        speech=speech,
                         )
                 elif self.acoustic_model == "speedyspeech":
                     tone_ids = paddle.to_tensor(input_ids["tone_ids"][0])
