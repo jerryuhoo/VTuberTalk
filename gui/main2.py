@@ -406,13 +406,13 @@ class App(QMainWindow):
             # all pitch should be the same, we use mean here
             robot = True
         if self.speed == "1.2xspeed":
-            durations_scale = 1 / 1.2
+            durations_scale = 1.2
         elif self.speed == "1.0xspeed":
             durations_scale = 1
         elif self.speed == "0.8xspeed":
-            durations_scale = 1 / 0.8
+            durations_scale = 0.8
         elif self.speed == "3.0xspeed":
-            durations_scale = 1 / 3.0
+            durations_scale = 3.0
         if self.style == "high_voice":
             pitch_scale = 1.3
         elif self.style == "low_voice":
