@@ -57,7 +57,7 @@ class Frontend():
             for phn, id in phn_id:
                 self.vocab_phones[phn] = int(id)
         if tone_vocab_path:
-            with open(tone_vocab_path, 'rt') as f:
+            with open(tone_vocab_path, 'rt', encoding='UTF-8') as f:
                 tone_id = [line.strip().split() for line in f.readlines()]
             for tone, id in tone_id:
                 self.vocab_tones[tone] = int(id)
@@ -115,6 +115,7 @@ class Frontend():
                 if pos == 'eng':
                     continue
                 sub_initials, sub_finals = self._get_initials_finals(word)
+                print("sub_initials", sub_initials, "sub_finals", sub_finals)
                 sub_finals = self.tone_modifier.modified_tone(word, pos,
                                                               sub_finals)
                 if with_erhua:

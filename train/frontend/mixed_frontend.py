@@ -1,7 +1,11 @@
 import re
 
-from paddlespeech.t2s.frontend.zh_frontend import Frontend as ChineseFrontend
-from paddlespeech.t2s.frontend.phonectic import English as EnglishFrontend
+# from paddlespeech.t2s.frontend.zh_frontend import Frontend as ChineseFrontend
+# from paddlespeech.t2s.frontend.phonectic import English as EnglishFrontend
+import sys
+sys.path.append("train")
+from frontend.zh_frontend import Frontend as ChineseFrontend
+from frontend.phonectic import English as EnglishFrontend
 
 
 class Frontend():
@@ -9,6 +13,7 @@ class Frontend():
                  g2p_model="pypinyin",
                  phone_vocab_path=None,
                  tone_vocab_path=None):
+        print(phone_vocab_path)
         self.english_frontend = EnglishFrontend(phone_vocab_path=phone_vocab_path)
         self.chinese_frontend = ChineseFrontend(phone_vocab_path=phone_vocab_path, tone_vocab_path=tone_vocab_path)
     
