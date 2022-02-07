@@ -34,7 +34,8 @@ class Frontend():
                  tone_vocab_path=None):
         self.tone_modifier = ToneSandhi()
         self.text_normalizer = TextNormalizer()
-        self.punc = "：，；。？！“”‘’':,;.?!"
+        # self.punc = "：，；。？！“”‘’':,;.?!"
+        self.punc = ""
         # g2p_model can be pypinyin and g2pM
         self.g2p_model = g2p_model
         if self.g2p_model == "g2pM":

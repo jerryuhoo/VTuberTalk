@@ -1,4 +1,5 @@
 import re
+import paddle
 
 # from paddlespeech.t2s.frontend.zh_frontend import Frontend as ChineseFrontend
 # from paddlespeech.t2s.frontend.phonectic import English as EnglishFrontend
