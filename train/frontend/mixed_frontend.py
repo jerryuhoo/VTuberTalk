@@ -29,7 +29,7 @@ class Frontend():
     def isEnglish(self, str):
         return bool(re.search('[a-zA-Z]+', str))
 
-    def get_input_ids(self, sentence, merge_sentences, robot, get_tone_ids=False):
+    def get_input_ids(self, sentence, merge_sentences, robot=False, get_tone_ids=False):
         segments = self.spliteKeyWord(sentence)
         result = {}
         for segment in segments:
