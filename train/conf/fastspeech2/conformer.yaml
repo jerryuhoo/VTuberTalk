@@ -23,7 +23,7 @@ f0max: 400         # Minimum f0 for pitch extraction.
 ###########################################################
 #                       DATA SETTING                      #
 ###########################################################
-batch_size: 16
+batch_size: 8
 num_workers: 4
 
 
@@ -78,7 +78,8 @@ model:
     energy_embed_kernel_size: 1                # kernel size of conv embedding layer for energy
     energy_embed_dropout: 0.0                  # dropout rate after conv embedding layer for energy
     stop_gradient_from_energy_predictor: false # whether to stop the gradient from energy predictor to encoder
-
+    spk_embed_dim: 256                         # speaker embedding dimension
+    spk_embed_integration_type: concat         # speaker embedding integration type
 
 
 ###########################################################
@@ -99,7 +100,7 @@ optimizer:
 ###########################################################
 #                     TRAINING SETTING                    #
 ###########################################################
-max_epoch: 1000
+max_epoch: 50 #1000
 num_snapshots: 5
 
 
