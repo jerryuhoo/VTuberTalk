@@ -239,8 +239,8 @@ def evaluate(args):
                     input_spec=[
                         InputSpec([-1], dtype=paddle.int64), # text
                         InputSpec([-1], dtype=paddle.int64), # tone
-                        None, # duration
-                        InputSpec([-1], dtype=paddle.int64) # spk_id
+                        InputSpec([1], dtype=paddle.int64),  # spk_id
+                        None                                 # duration
                     ])
             else:
                 am_inference = jit.to_static(

@@ -16,11 +16,8 @@ from paddle import nn
 
 from paddlespeech.t2s.modules.nets_utils import initialize
 from paddlespeech.t2s.modules.positional_encoding import sinusoid_position_encoding
-# from paddlespeech.t2s.modules.predictor.length_regulator import LengthRegulator
+from paddlespeech.t2s.modules.predictor.length_regulator import LengthRegulator
 
-import sys
-sys.path.append("train/modules")
-from length_regulator import LengthRegulator
 
 class ResidualBlock(nn.Layer):
     def __init__(self, channels, kernel_size, dilation, n=2):
@@ -250,7 +247,7 @@ class SpeedySpeechInference(nn.Layer):
         self.normalizer = normalizer
         self.acoustic_model = speedyspeech_model
 
-    def forward(self, phones, tones, durations=None, spk_id=None):
+    def forward(self, phones, tones, spk_id=None, durations=None):
         normalized_mel = self.acoustic_model.inference(
             phones, tones, durations=durations, spk_id=spk_id)
         logmel = self.normalizer.inverse(normalized_mel)
