@@ -89,7 +89,7 @@ def evaluate(args):
     sentences = []
     with open(args.text, 'rt') as f:
         for line in f:
-            items = line.strip().split()
+            items = line.strip().split(" ", 1)
             utt_id = items[0]
             if args.lang == 'zh':
                 sentence = "".join(items[1:])
