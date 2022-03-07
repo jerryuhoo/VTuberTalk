@@ -37,13 +37,9 @@ class Frontend():
                 eng_text = self.english_frontend.get_input_ids(
                         segment, merge_sentences=merge_sentences, get_tone_ids=get_tone_ids)
                 if result:
-                    x1 = result["phone_ids"][0]
-                    x2 = eng_text["phone_ids"][0]
-                    result["phone_ids"][0] = paddle.concat(x=[x1, x2], axis=0)
+                    result["phone_ids"].append(eng_text["phone_ids"][0])
                     if get_tone_ids:
-                        x1 = result["tone_ids"][0]
-                        x2 = eng_text["tone_ids"][0]
-                        result["tone_ids"][0] = paddle.concat(x=[x1, x2], axis=0)
+                        result["tone_ids"].append(eng_text["tone_ids"][0])
                 else:
                     result["phone_ids"] = eng_text["phone_ids"]
                     if get_tone_ids:
@@ -52,13 +48,13 @@ class Frontend():
                 cn_text = self.chinese_frontend.get_input_ids(
                     segment, merge_sentences=merge_sentences, get_tone_ids=get_tone_ids, robot=robot)
                 if result:
-                    x1 = result["phone_ids"][0]
+                    x1 = result["phone_ids"][-1]
                     x2 = cn_text["phone_ids"][0]
-                    result["phone_ids"][0] = paddle.concat(x=[x1, x2], axis=0)
+                    result["phone_ids"][-1] = paddle.concat(x=[x1, x2], axis=0)
                     if get_tone_ids:
-                        x1 = result["tone_ids"][0]
+                        x1 = result["tone_ids"][-1]
                         x2 = cn_text["tone_ids"][0]
-                        result["tone_ids"][0] = paddle.concat(x=[x1, x2], axis=0)
+                        result["tone_ids"][-1] = paddle.concat(x=[x1, x2], axis=0)
                 else:
                     result["phone_ids"] = cn_text["phone_ids"]
                     if get_tone_ids:
