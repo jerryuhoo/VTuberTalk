@@ -4,7 +4,7 @@ speaker=azi
 cut_minute=10
 sample_rate=32000
 ag=3
-min_text=2
+min_text=4
 max_text=60
 use_spleeter=True
 
