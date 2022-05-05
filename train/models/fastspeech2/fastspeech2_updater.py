@@ -12,8 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+from pathlib import Path
 
 from paddle import distributed as dist
+from paddle.io import DataLoader
+from paddle.nn import Layer
+from paddle.optimizer import Optimizer
 
 import sys
 sys.path.append("train/models")
@@ -31,20 +35,19 @@ logger.setLevel(logging.INFO)
 
 class FastSpeech2Updater(StandardUpdater):
     def __init__(self,
-                 model,
-                 optimizer,
-                 dataloader,
+                 model: Layer,
+                 optimizer: Optimizer,
+                 dataloader: DataLoader,
                  init_state=None,
-                 use_masking=False,
-                 use_weighted_masking=False,
-                 output_dir=None):
+                 use_masking: bool=False,
+                 use_weighted_masking: bool=False,
+                 output_dir: Path=None):
         super().__init__(model, optimizer, dataloader, init_state=None)
         self.use_masking = use_masking
         self.use_weighted_masking = use_weighted_masking
 
         self.criterion = FastSpeech2Loss(
-            use_masking=self.use_masking,
-            use_weighted_masking=self.use_weighted_masking)
+            use_masking=use_masking, use_weighted_masking=use_weighted_masking)
 
         log_file = output_dir / 'worker_{}.log'.format(dist.get_rank())
         self.filehandler = logging.FileHandler(str(log_file))
@@ -90,7 +93,7 @@ class FastSpeech2Updater(StandardUpdater):
             z=z,
             iteration=self.state.iteration)
 
-        if (mu != None):
+        if mu is not None:
             kl_loss_final = kl_weight * kl_loss
         else:
             kl_loss_final = 0
@@ -106,7 +109,7 @@ class FastSpeech2Updater(StandardUpdater):
         report("train/duration_loss", float(duration_loss))
         report("train/pitch_loss", float(pitch_loss))
         report("train/energy_loss", float(energy_loss))
-        if (mu != None):
+        if mu is not None:
             report("train/kl_loss", float(kl_loss))
             report("train/kl_weight", float(kl_weight))
             report("train/kl_loss_final", float(kl_loss_final))
@@ -115,7 +118,7 @@ class FastSpeech2Updater(StandardUpdater):
         losses_dict["duration_loss"] = float(duration_loss)
         losses_dict["pitch_loss"] = float(pitch_loss)
         losses_dict["energy_loss"] = float(energy_loss)
-        if (mu != None):
+        if mu is not None:
             losses_dict["kl_loss"] = float(kl_loss)
             losses_dict["kl_weight"] = float(kl_weight)
             losses_dict["kl_loss_final"] = float(kl_loss_final)
@@ -126,11 +129,11 @@ class FastSpeech2Updater(StandardUpdater):
 
 class FastSpeech2Evaluator(StandardEvaluator):
     def __init__(self,
-                 model,
-                 dataloader,
-                 use_masking=False,
-                 use_weighted_masking=False,
-                 output_dir=None,
+                 model: Layer,
+                 dataloader: DataLoader,
+                 use_masking: bool=False,
+                 use_weighted_masking: bool=False,
+                 output_dir: Path=None,
                  updater=None):
         super().__init__(model, dataloader)
         self.use_masking = use_masking
@@ -184,7 +187,8 @@ class FastSpeech2Evaluator(StandardEvaluator):
             logvar=logvar,
             z=z,
             iteration=self.updater.state.iteration)
-        if (mu != None):
+
+        if mu is not None:
             kl_loss_final = kl_weight * kl_loss
         else:
             kl_loss_final = 0
@@ -195,17 +199,16 @@ class FastSpeech2Evaluator(StandardEvaluator):
         report("eval/duration_loss", float(duration_loss))
         report("eval/pitch_loss", float(pitch_loss))
         report("eval/energy_loss", float(energy_loss))
-        if (mu != None):
-            report("train/kl_loss", float(kl_loss))
-            report("train/kl_weight", float(kl_weight))
-            report("train/kl_loss_final", float(kl_loss_final))
-
+        if mu is not None:
+            report("eval/kl_loss", float(kl_loss))
+            report("eval/kl_weight", float(kl_weight))
+            report("eval/kl_loss_final", float(kl_loss_final))
 
         losses_dict["l1_loss"] = float(l1_loss)
         losses_dict["duration_loss"] = float(duration_loss)
         losses_dict["pitch_loss"] = float(pitch_loss)
         losses_dict["energy_loss"] = float(energy_loss)
-        if (mu != None):
+        if mu is not None:
             losses_dict["kl_loss"] = float(kl_loss)
             losses_dict["kl_weight"] = float(kl_weight)
             losses_dict["kl_loss_final"] = float(kl_loss_final)
