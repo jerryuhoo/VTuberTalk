@@ -1,5 +1,5 @@
 paddlepaddle
-paddlespeech
+paddlespeech==0.2.0
 pydub
 PyQt5
 sounddevice

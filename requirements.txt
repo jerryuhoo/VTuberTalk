@@ -1,5 +1,5 @@
 paddlepaddle-gpu
-paddlespeech
+paddlespeech==0.2.0
 pydub
 spleeter==2.3.0
 PyQt5
