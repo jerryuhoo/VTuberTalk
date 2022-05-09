@@ -5,8 +5,6 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import pyqtSlot, QUrl
 import sounddevice as sd
 
-# from paddle
-import argparse
 from pathlib import Path
 
 import numpy as np
@@ -18,14 +16,12 @@ from yacs.config import CfgNode
 import sys
 
 sys.path.append("train/frontend")
-# from zh_frontend import Frontend
 from mixed_frontend import Frontend
 
 sys.path.append("train/models")
 from fastspeech2 import FastSpeech2
 from speedyspeech import SpeedySpeech
 # from paddlespeech.t2s.models.fastspeech2 import FastSpeech2
-
 # from paddlespeech.t2s.models.fastspeech2 import StyleFastSpeech2Inference
 
 from fastspeech2 import StyleFastSpeech2Inference
@@ -81,22 +77,19 @@ class App(QMainWindow):
         self.voice_label.setText("声音：")
 
         self.voice_combo = QComboBox(self)
-        self.voice_combo.addItem("阿梓")
-        self.voice_combo.addItem("海子姐")
 
         self.voice_combo.move(240, 80)
         self.voice_combo.resize(120, 40)
         self.voice_combo.activated[str].connect(self.onVoiceComboboxChanged)
 
         # tts model
-
         self.tts_style_label = QLabel(self)
         self.tts_style_label.move(160, 120)
         self.tts_style_label.setText("风格：")
 
         self.tts_style_combo = QComboBox(self)
         self.tts_style_combo.addItem("正常")
-        self.tts_style_combo.addItem("机器楞")
+        self.tts_style_combo.addItem("机器人")
         self.tts_style_combo.addItem("高音")
         self.tts_style_combo.addItem("低音")
 
@@ -119,9 +112,8 @@ class App(QMainWindow):
         self.acoustic_model_label.setText("模型：")
 
         self.acoustic_model_combo = QComboBox(self)
-        self.acoustic_model_combo.addItem("gst-fastspeech2")
         self.acoustic_model_combo.addItem("fastspeech2")
-        self.acoustic_model_combo.addItem("gst-speedyspeech")
+        self.acoustic_model_combo.addItem("gst-fastspeech2")
         self.acoustic_model_combo.addItem("speedyspeech")
         self.acoustic_model_combo.addItem("vae-fastspeech2")
 
@@ -167,6 +159,8 @@ class App(QMainWindow):
         self.style = "Normal"
         self.speed = 1.0
         self.wav = None
+        self.speaker_name_dict = {}
+        self.spk_id = 0
 
         if self.ngpu == 0:
             paddle.set_device("cpu")
@@ -188,6 +182,15 @@ class App(QMainWindow):
         elif self.acoustic_model == "speedyspeech":
             self.frontend = Frontend(phone_vocab_path=self.phones_dict, tone_vocab_path=self.tones_dict)
         print("frontend done!")
+
+    def loadSpeakerName(self, speaker_id_file):
+        f = open(speaker_id_file, "r") 
+        for line in f.readlines():
+            speaker_name = line.strip().split()[0]
+            speaker_id = line.strip().split()[1]
+            self.speaker_name_dict[speaker_name] = speaker_id
+            self.voice_combo.addItem(speaker_name)
+        f.close()
     
     def loadAcousticModel(self):
         # acoustic model
@@ -223,7 +226,7 @@ class App(QMainWindow):
                 self.speaker_dict="exp/fastspeech2_aishell3_english/speaker_id_map.txt"
                 self.fastspeech2_config_path = "exp/fastspeech2_aishell3_english/default_multi.yaml"
                 self.fastspeech2_checkpoint = "exp/fastspeech2_aishell3_english/checkpoints/snapshot_iter_430150.pdz"
-
+                self.loadSpeakerName(self.speaker_dict)
             with open(self.fastspeech2_config_path) as f:
                 self.fastspeech2_config = CfgNode(yaml.safe_load(f))
         elif self.acoustic_model == "speedyspeech":
@@ -344,7 +347,6 @@ class App(QMainWindow):
         else:
             try:
                 self.speed = min(3.0, max(0.1, float(speed_value)))
-                
             except ValueError:
                 self.messageDialog("输入错误，需要输入整数或小数，正常速度为1.0！")
 
@@ -532,12 +534,13 @@ class App(QMainWindow):
             self.ref_audio_path = filenames[0]
             self.ref_audio_label.setText("已加载：" + os.path.basename(filenames[0]))
 
-
-    def onVoiceComboboxChanged(self, text):
-        if text == "阿梓":
-            self.spk_id = 175
-        elif text == "海子姐":
-            self.spk_id = 176
+    def onVoiceComboboxChanged(self, speaker_name):
+        if speaker_name == '':
+            return
+        try:
+            self.spk_id = int(self.speaker_name_dict[speaker_name])
+        except:
+            print("speaker dict error")
 
     def onTTSStyleComboboxChanged(self, text):
         if text == "正常":
