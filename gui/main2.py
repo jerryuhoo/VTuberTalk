@@ -34,7 +34,7 @@ from paddlespeech.t2s.models.hifigan import HiFiGANInference
 from paddlespeech.t2s.models.parallel_wavegan import PWGInference
 import paddlespeech.t2s.models as ttsModels
 from paddlespeech.t2s.modules.normalizer import ZScore
-from paddlespeech.t2s.data.get_feats import LogMelFBank
+from paddlespeech.t2s.datasets.get_feats import LogMelFBank
 
 import librosa
 from sklearn.preprocessing import StandardScaler

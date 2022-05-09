@@ -23,7 +23,7 @@ sys.path.append("train/models")
 # from paddlespeech.t2s.models.fastspeech2 import StyleFastSpeech2Inference
 
 from paddlespeech.t2s.modules.normalizer import ZScore
-from paddlespeech.t2s.data.get_feats import LogMelFBank
+from paddlespeech.t2s.datasets.get_feats import LogMelFBank
 
 import librosa
 from sklearn.preprocessing import StandardScaler
