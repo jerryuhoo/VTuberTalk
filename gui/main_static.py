@@ -97,15 +97,10 @@ class App(QMainWindow):
         self.tts_speed_label.move(160, 160)
         self.tts_speed_label.setText("速度：")
 
-        self.tts_speed_combo = QComboBox(self)
-        self.tts_speed_combo.addItem("1.0x")
-        self.tts_speed_combo.addItem("0.8x")
-        self.tts_speed_combo.addItem("1.2x")
-        self.tts_speed_combo.addItem("古神")
-
-        self.tts_speed_combo.move(240, 160)
-        self.tts_speed_combo.resize(120, 40)
-        self.tts_speed_combo.activated[str].connect(self.onTTSSpeedComboboxChanged)
+        self.tts_speed_box = QLineEdit(self)
+        self.tts_speed_box.setText("1.0")
+        self.tts_speed_box.move(240, 160)
+        self.tts_speed_box.resize(120, 40)
 
         #  acoustic model
         self.acoustic_model_label = QLabel(self)
@@ -159,7 +154,7 @@ class App(QMainWindow):
         # parse args and config and redirect to train_sp
         self.ngpu = 0
         self.style = "Normal"
-        self.speed = "1.0xspeed"
+        self.speed = 1.0
         self.wav = None
         self.fs = 24000
 
@@ -171,7 +166,6 @@ class App(QMainWindow):
         self.voice_cloning = None
 
         self.onTTSStyleComboboxChanged(self.tts_style_combo.currentText())
-        self.onTTSSpeedComboboxChanged(self.tts_speed_combo.currentText())
         self.onAcousticModelComboboxChanged(self.acoustic_model_combo.currentText())
         self.onVocModelComboboxChanged(self.voc_model_combo.currentText())
         self.onVoiceComboboxChanged(self.voice_combo.currentText())
@@ -242,8 +236,18 @@ class App(QMainWindow):
 
         textboxValue = self.textbox.text()
         if textboxValue == "":
-            self.messageDialog("输入不能为空！")
+            self.messageDialog("文字输入不能为空！")
             return
+
+        speed_value = self.tts_speed_box.text()
+        if speed_value == "":
+            self.messageDialog("速度输入不能为空！")
+            return
+        else:
+            try:
+                self.speed = float(speed_value)
+            except ValueError:
+                self.messageDialog("输入错误，需要输入整数或小数，正常速度为1.0！")
 
         sentences = []
         sentences.append(("001", textboxValue))
@@ -266,25 +270,13 @@ class App(QMainWindow):
         elif self.tts_style_combo.currentText() == "低音":
             self.style = "low_voice"
 
-        if self.tts_speed_combo.currentText() == "1.2x":
-            self.speed = "1.2xspeed"
-        elif self.tts_speed_combo.currentText() == "0.8x":
-            self.speed = "0.8xspeed"
-        elif self.tts_speed_combo.currentText() == "古神":
-            self.speed = "3.0xspeed"
-
         if self.style == "robot":
             # all tones in phones be `1`
             # all pitch should be the same, we use mean here
             robot = True
-        if self.speed == "1.2xspeed":
-            durations_scale = 1.2
-        elif self.speed == "1.0xspeed":
-            durations_scale = 1
-        elif self.speed == "0.8xspeed":
-            durations_scale = 0.8
-        elif self.speed == "3.0xspeed":
-            durations_scale = 3.0
+        
+        durations_scale = self.speed
+
         if self.style == "high_voice":
             pitch_scale = 1.3
         elif self.style == "low_voice":
@@ -419,16 +411,6 @@ class App(QMainWindow):
             self.style = "high_voice"
         elif text == "低音":
             self.style = "low_voice"
-        
-    def onTTSSpeedComboboxChanged(self, text):
-        if text == "1.0x":
-            self.speed = "1.0xspeed"
-        elif text == "1.2x":
-            self.speed = "1.2xspeed"
-        elif text == "0.8x":
-            self.speed = "0.8xspeed"
-        elif text == "古神":
-            self.speed = "3.0xspeed"
 
     def onAcousticModelComboboxChanged(self, text):
         if text == "gst-fastspeech2":
