@@ -1023,8 +1023,7 @@ class StyleFastSpeech2Inference(FastSpeech2Inference):
             Tensor: logmel
 
         """
-        assert(self.pitch_mean and self.pitch_std), "pitch_mean and pitch_std is None!"
-        assert(self.energy_mean and self.energy_std), "energy_mean and energy_std is None!"
+        
         normalized_mel, d_outs, p_outs, e_outs, mu, logvar, z = self.acoustic_model.inference(
             text,
             speech=speech,
