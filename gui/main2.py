@@ -134,6 +134,7 @@ class App(QMainWindow):
         self.voc_model_combo = QComboBox(self)
         self.voc_model_combo.addItem("parallel wavegan")
         self.voc_model_combo.addItem("hifigan")
+        self.voc_model_combo.addItem("hifigan_ss")
 
         self.voc_model_combo.move(240, 240)
         self.voc_model_combo.resize(120, 40)
@@ -161,6 +162,8 @@ class App(QMainWindow):
         self.wav = None
         self.speaker_name_dict = {}
         self.spk_id = 0
+        self.use_static = True
+        self.fs = 24000
 
         if self.ngpu == 0:
             paddle.set_device("cpu")
@@ -178,9 +181,15 @@ class App(QMainWindow):
 
     def loadFrontend(self):
         if self.acoustic_model == "fastspeech2":
-            self.frontend = Frontend(phone_vocab_path=self.phones_dict)
+            try:
+                self.frontend = Frontend(phone_vocab_path=self.phones_dict)
+            except:
+                self.messageDialog("未找到phones_dict路径")
         elif self.acoustic_model == "speedyspeech":
-            self.frontend = Frontend(phone_vocab_path=self.phones_dict, tone_vocab_path=self.tones_dict)
+            try:
+                self.frontend = Frontend(phone_vocab_path=self.phones_dict, tone_vocab_path=self.tones_dict)
+            except:
+                self.messageDialog("未找到phones_dict路径")
         print("frontend done!")
 
     def loadSpeakerName(self, speaker_id_file):
@@ -192,7 +201,7 @@ class App(QMainWindow):
             self.voice_combo.addItem(speaker_name)
         f.close()
     
-    def loadAcousticModel(self):
+    def loadDynamicAcousticModel(self):
         # acoustic model
         if self.acoustic_model == "fastspeech2":
             if self.use_gst:          
@@ -225,8 +234,7 @@ class App(QMainWindow):
                 self.phones_dict = "exp/fastspeech2_aishell3_english/phone_id_map.txt"
                 self.speaker_dict="exp/fastspeech2_aishell3_english/speaker_id_map.txt"
                 self.fastspeech2_config_path = "exp/fastspeech2_aishell3_english/default_multi.yaml"
-                self.fastspeech2_checkpoint = "exp/fastspeech2_aishell3_english/checkpoints/snapshot_iter_430150.pdz"
-                self.loadSpeakerName(self.speaker_dict)
+                self.fastspeech2_checkpoint = "exp/fastspeech2_aishell3_english/checkpoints/snapshot_iter_430150.pdz"  
             with open(self.fastspeech2_config_path) as f:
                 self.fastspeech2_config = CfgNode(yaml.safe_load(f))
         elif self.acoustic_model == "speedyspeech":
@@ -238,7 +246,7 @@ class App(QMainWindow):
             self.speaker_dict="exp/speedyspeech_azi_nanami_new/speaker_id_map.txt"
             with open(self.speedyspeech_config_path) as f:
                 self.speedyspeech_config = CfgNode(yaml.safe_load(f))
-
+        self.loadSpeakerName(self.speaker_dict)
         fields = ["utt_id", "text"]
         self.spk_num = None
         if self.speaker_dict:
@@ -290,8 +298,7 @@ class App(QMainWindow):
             self.model.eval()
             print("speedyspeech model done!")
         
-
-    def loadVocoderModel(self):   
+    def loadDynamicVocoderModel(self):   
         # vocoder
         class_map = {
             "hifigan": "HiFiGANGenerator",
@@ -329,6 +336,48 @@ class App(QMainWindow):
 
         print("vocoder model done!")
 
+    def loadStaticAcousticModel(self):
+        # acoustic model
+        if self.acoustic_model == "fastspeech2":
+            self.phones_dict = "pretrained_models/fastspeech2_aishell3_english_static/phone_id_map.txt"
+            self.speaker_dict = "pretrained_models/fastspeech2_aishell3_english_static/speaker_id_map.txt"
+            self.am_inference = paddle.jit.load(
+                            os.path.join("pretrained_models/fastspeech2_aishell3_english_static", "fastspeech2_aishell3"))
+                
+        elif self.acoustic_model == "speedyspeech":
+            self.tones_dict = "pretrained_models/speedyspeech_azi_nanami_static/tone_id_map.txt"
+            self.phones_dict = "pretrained_models/speedyspeech_azi_nanami_static/phone_id_map.txt"
+            self.speaker_dict="pretrained_models/speedyspeech_azi_nanami_static/speaker_id_map.txt"
+            self.am_inference = paddle.jit.load(
+                            os.path.join("pretrained_models/speedyspeech_azi_nanami_static", "speedyspeech_csmsc"))
+        self.loadSpeakerName(self.speaker_dict)
+        fields = ["utt_id", "text"]
+        self.spk_num = None
+        if self.speaker_dict:
+            print("multiple speaker")
+            with open(self.speaker_dict, 'rt') as f:
+                spk_id_list = [line.strip().split() for line in f.readlines()]
+            self.spk_num = len(spk_id_list)
+            fields += ["spk_id"]
+        elif self.voice_cloning:
+            print("voice cloning!")
+            fields += ["spk_emb"]
+        else:
+            print("single speaker")
+        print("spk_num:", self.spk_num)
+
+        # with open(self.phones_dict, "r", encoding='UTF-8') as f:
+        #     phn_id = [line.strip().split() for line in f.readlines()]
+        # vocab_size = len(phn_id)
+        # print("vocab_size:", vocab_size)
+
+    def loadStaticVocoderModel(self):   
+        # vocoder
+        if self.vocoder == "hifigan":
+            self.voc_inference = paddle.jit.load(os.path.join("pretrained_models/fastspeech2_aishell3_english_static", "hifigan_csmsc"))
+        elif self.vocoder == "hifigan_ss":
+            self.voc_inference = paddle.jit.load(os.path.join("pretrained_models/speedyspeech_azi_nanami_static", "hifigan_csmsc"))
+
     @pyqtSlot()
     def onGenerateButtonClicked(self):
         if self.ref_audio_path == "" and (self.use_gst or self.use_vae):
@@ -353,56 +402,57 @@ class App(QMainWindow):
         sentences = []
         sentences.append(("001", textboxValue))
 
-        if self.acoustic_model == "fastspeech2":
-            stat = np.load(self.fastspeech2_stat)
+        if not self.use_static:
+            if self.acoustic_model == "fastspeech2":
+                stat = np.load(self.fastspeech2_stat)
+                mu, std = stat
+                mu = paddle.to_tensor(mu)
+                std = paddle.to_tensor(std)
+                fastspeech2_normalizer = ZScore(mu, std)
+            elif self.acoustic_model == "speedyspeech":
+                stat = np.load(self.speedyspeech_stat)
+                mu, std = stat
+                mu = paddle.to_tensor(mu)
+                std = paddle.to_tensor(std)
+                speedyspeech_normalizer = ZScore(mu, std)
+
+            if self.vocoder == "pwg":
+                stat = np.load(self.pwg_stat)
+            elif self.vocoder == "hifigan":
+                stat = np.load(self.hifigan_stat)
             mu, std = stat
             mu = paddle.to_tensor(mu)
             std = paddle.to_tensor(std)
-            fastspeech2_normalizer = ZScore(mu, std)
-        elif self.acoustic_model == "speedyspeech":
-            stat = np.load(self.speedyspeech_stat)
-            mu, std = stat
-            mu = paddle.to_tensor(mu)
-            std = paddle.to_tensor(std)
-            speedyspeech_normalizer = ZScore(mu, std)
+            vocoder_normalizer = ZScore(mu, std)
 
-        if self.vocoder == "pwg":
-            stat = np.load(self.pwg_stat)
-        elif self.vocoder == "hifigan":
-            stat = np.load(self.hifigan_stat)
-        mu, std = stat
-        mu = paddle.to_tensor(mu)
-        std = paddle.to_tensor(std)
-        vocoder_normalizer = ZScore(mu, std)
+            if self.acoustic_model == "fastspeech2":
+                fastspeech2_inference = StyleFastSpeech2Inference(
+                    fastspeech2_normalizer, self.model, self.fastspeech2_pitch_stat,
+                    self.fastspeech2_energy_stat)
+                fastspeech2_inference.eval()
+            elif self.acoustic_model == "speedyspeech":
+                speedyspeech_inference = SpeedySpeechInference(
+                    speedyspeech_normalizer, self.model)
+                speedyspeech_inference.eval()
 
-        if self.acoustic_model == "fastspeech2":
-            fastspeech2_inference = StyleFastSpeech2Inference(
-                fastspeech2_normalizer, self.model, self.fastspeech2_pitch_stat,
-                self.fastspeech2_energy_stat)
-            fastspeech2_inference.eval()
-        elif self.acoustic_model == "speedyspeech":
-            speedyspeech_inference = SpeedySpeechInference(
-                speedyspeech_normalizer, self.model)
-            speedyspeech_inference.eval()
-
-        if self.vocoder == "pwg":
-            vocoder_inference = PWGInference(vocoder_normalizer, self.generator)
-        elif self.vocoder == "hifigan":
-            vocoder_inference = HiFiGANInference(vocoder_normalizer, self.generator)
-        vocoder_inference.eval()
+            if self.vocoder == "pwg":
+                vocoder_inference = PWGInference(vocoder_normalizer, self.generator)
+            elif self.vocoder == "hifigan":
+                vocoder_inference = HiFiGANInference(vocoder_normalizer, self.generator)
+            vocoder_inference.eval()
 
         robot = False
         durations = None
-        durations_scale = None
-        durations_bias = None
+        durations_scale = 1.0
+        durations_bias = 0.0
         pitch = None
-        pitch_scale = None
-        pitch_bias = None
+        pitch_scale = 1.0
+        pitch_bias = 0.0
         energy = None
-        energy_scale = None
-        energy_bias = None
+        energy_scale = 1.0
+        energy_bias = 0.0
 
-        if self.tts_style_combo.currentText() == "机器楞":
+        if self.tts_style_combo.currentText() == "机器人":
             self.style = "robot"
         elif self.tts_style_combo.currentText() == "高音":
             self.style = "high_voice"
@@ -425,7 +475,7 @@ class App(QMainWindow):
          
         record = None
         try:
-            wav, _ = librosa.load(str(self.ref_audio_path), sr=self.fastspeech2_config.fs)
+            wav, _ = librosa.load(str(self.ref_audio_path), sr=self.fs)
             if len(wav.shape) != 1 or np.abs(wav).max() > 1.0:
                 return record
             assert len(wav.shape) == 1, f"ref audio is not a mono-channel audio."
@@ -433,7 +483,7 @@ class App(QMainWindow):
             ) <= 1.0, f"ref audio is seems to be different that 16 bit PCM."
 
             mel_extractor = LogMelFBank(
-                sr=self.fastspeech2_config.fs,
+                sr=self.fs,
                 n_fft=self.fastspeech2_config.n_fft,
                 hop_length=self.fastspeech2_config.n_shift,
                 win_length=self.fastspeech2_config.win_length,
@@ -472,32 +522,55 @@ class App(QMainWindow):
             self.spk_id = paddle.to_tensor(self.spk_id)
 
             # self.spk_id = None # temp
+            if not self.use_static:
+                print("dynamic inference")
+                with paddle.no_grad():
+                    if self.acoustic_model == "fastspeech2":
+                        mel = fastspeech2_inference(
+                            phone_ids,
+                            durations_scale=durations_scale,
+                            durations_bias=durations_bias,
+                            pitch_scale=pitch_scale,
+                            pitch_bias=pitch_bias,
+                            energy_scale=energy_scale,
+                            energy_bias=energy_bias,
+                            robot=robot,
+                            spk_id=self.spk_id,
+                            speech=speech,
+                        )
+                    elif self.acoustic_model == "speedyspeech":
+                        tone_ids = paddle.to_tensor(input_ids["tone_ids"][0])
+                        mel = speedyspeech_inference(
+                            phone_ids,
+                            tone_ids,
+                            spk_id=self.spk_id
+                        )
+                    print("mel infer done")
+                    self.wav = vocoder_inference(mel)
+                    print("vocoder infer done")
+                print(f"{self.style}_{utt_id} done!")
 
-            with paddle.no_grad():
-                if self.acoustic_model == "fastspeech2":
-                    mel = fastspeech2_inference(
-                        phone_ids,
-                        durations_scale=durations_scale,
-                        durations_bias=durations_bias,
-                        pitch_scale=pitch_scale,
-                        pitch_bias=pitch_bias,
-                        energy_scale=energy_scale,
-                        energy_bias=energy_bias,
-                        robot=robot,
-                        spk_id=self.spk_id,
-                        speech=speech,
-                        )
-                elif self.acoustic_model == "speedyspeech":
-                    tone_ids = paddle.to_tensor(input_ids["tone_ids"][0])
-                    mel = speedyspeech_inference(
-                        phone_ids,
-                        tone_ids,
-                        spk_id=self.spk_id
-                        )
-                print("mel infer done")
-                self.wav = vocoder_inference(mel)
-                print("vocoder infer done")
-            print(f"{self.style}_{utt_id} done!")
+            if self.use_static:
+                print("static inference")
+                with paddle.no_grad():
+                    if self.acoustic_model == "fastspeech2":
+                        d_scale = paddle.to_tensor(durations_scale, dtype='float32')
+                        p_scale = paddle.to_tensor(pitch_scale, dtype='float32')
+                        e_scale = paddle.to_tensor(energy_scale, dtype='float32')
+                        d_bias = paddle.to_tensor(durations_bias, dtype='float32')
+                        p_bias = paddle.to_tensor(pitch_bias, dtype='float32')
+                        e_bias = paddle.to_tensor(energy_bias, dtype='float32')
+                        robot = paddle.to_tensor(robot, dtype='bool')
+                        mel = self.am_inference(phone_ids, d_scale, d_bias, p_scale, p_bias, e_scale, e_bias, robot, self.spk_id)
+                    elif self.acoustic_model == "speedyspeech":
+                        tone_ids = paddle.to_tensor(input_ids["tone_ids"][0])
+                        mel = self.am_inference(phone_ids, tone_ids, self.spk_id)
+                        print("mel", mel)
+                        print("mel shape", mel.shape)
+                    print("mel infer done")
+                    self.wav = self.voc_inference(mel)
+                    print("vocoder infer done")
+                print(f"{self.style}_{utt_id} done!")
 
         self.playAudioFile()
 
@@ -513,7 +586,7 @@ class App(QMainWindow):
             if fpath:
                 if Path(fpath).suffix == "":
                     fpath += ".wav"
-                sf.write(fpath, self.wav.numpy(), samplerate=self.fastspeech2_config.fs)
+                sf.write(fpath, self.wav.numpy(), samplerate=self.fs)
         else:
             self.messageDialog("还没有合成声音，无法保存！")
     
@@ -572,7 +645,10 @@ class App(QMainWindow):
             self.use_vae = True
             self.use_gst = False
         self.onVoiceComboboxChanged(self.voice_combo.currentText())
-        self.loadAcousticModel()
+        if not self.use_static:
+            self.loadDynamicAcousticModel()
+        else:
+            self.loadStaticAcousticModel()
         self.loadFrontend()
 
     def onVocModelComboboxChanged(self, text):
@@ -580,7 +656,13 @@ class App(QMainWindow):
             self.vocoder = "pwg"
         elif text == "hifigan":
             self.vocoder = "hifigan"
-        self.loadVocoderModel()
+        elif text == "hifigan_ss":
+            self.vocoder = "hifigan_ss"
+
+        if not self.use_static:
+            self.loadDynamicVocoderModel()
+        else:
+            self.loadStaticVocoderModel()
 
     def playAudioFile(self):
         if type(self.wav) == type(None):
@@ -588,7 +670,7 @@ class App(QMainWindow):
             return
         try:
             sd.stop()
-            sd.play(self.wav, self.fastspeech2_config.fs)
+            sd.play(self.wav, self.fs)
         except Exception as e:
             print(e)
             self.log("Error in audio playback. Try selecting a different audio output device.")
