@@ -55,19 +55,7 @@ pip install -r requirements_cpu.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 参考[paddlepaddle安装](https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/install/pip/linux-pip.html)
 
-GPU安装:
-
-```shell
-python -m pip install paddlepaddle-gpu==2.2.1.post112 -f https://www.paddlepaddle.org.cn/whl/linux/mkl/avx/stable.html
-
-pip install paddlespeech
-```
-
-CPU安装：
-
-```shell
-pip install paddlepaddle paddlespeech
-```
+【需要paddle 2.3.0以上版本】
 
 ### 1.4. 目录结构
 
@@ -610,12 +598,10 @@ pip install sounddevice
 
 * 动态模型启动（开发者测试用）设置`self.use_static = False`
 * 静态模型启动（用户使用）设置`self.use_static = True`
+
 ```shell
 python gui/main.py
 ```
-
-
-
 
 ## 6. TODO list
 
