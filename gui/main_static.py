@@ -245,7 +245,7 @@ class App(QMainWindow):
             return
         else:
             try:
-                self.speed = float(speed_value)
+                self.speed = min(3.0, max(0.1, float(speed_value)))
             except ValueError:
                 self.messageDialog("输入错误，需要输入整数或小数，正常速度为1.0！")
 
