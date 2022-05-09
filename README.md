@@ -608,17 +608,14 @@ pip install sounddevice
 启动GUI界面：
 （从项目根目录启动）
 
-动态模型启动（开发者测试用）
-
+* 动态模型启动（开发者测试用）设置`self.use_static = False`
+* 静态模型启动（用户使用）设置`self.use_static = True`
 ```shell
-python gui/main2.py
+python gui/main.py
 ```
 
-静态模型启动（用户使用）
 
-```shell
-python gui/main_static.py
-```
+
 
 ## 6. TODO list
 
