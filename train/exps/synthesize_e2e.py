@@ -21,13 +21,14 @@ import yaml
 from timer import timer
 from yacs.config import CfgNode
 
-
-from paddlespeech.t2s.exps.syn_utils import am_to_static
-from paddlespeech.t2s.exps.syn_utils import get_am_inference
-from paddlespeech.t2s.exps.syn_utils import get_frontend
-from paddlespeech.t2s.exps.syn_utils import get_sentences
-from paddlespeech.t2s.exps.syn_utils import get_voc_inference
-from paddlespeech.t2s.exps.syn_utils import voc_to_static
+import sys
+sys.path.append("train/exps")
+from syn_utils import am_to_static
+from syn_utils import get_am_inference
+from syn_utils import get_frontend
+from syn_utils import get_sentences
+from syn_utils import get_voc_inference
+from syn_utils import voc_to_static
 from paddlespeech.t2s.datasets.get_feats import LogMelFBank
 from paddlespeech.t2s.utils import str2bool
 
@@ -67,7 +68,7 @@ def evaluate(args):
         am_inference = am_to_static(args, am_inference, am_name, am_dataset)
 
         # vocoder
-        # voc_inference = voc_to_static(args, voc_inference)
+        voc_inference = voc_to_static(args, voc_inference)
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)

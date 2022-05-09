@@ -14,6 +14,7 @@
 # Modified from espnet(https://github.com/espnet/espnet)
 """Fastspeech2 related modules for paddle"""
 from typing import Dict
+from typing import List
 from typing import Sequence
 from typing import Tuple
 from typing import Union
@@ -32,9 +33,10 @@ from paddlespeech.t2s.modules.predictor.duration_predictor import DurationPredic
 from paddlespeech.t2s.modules.predictor.length_regulator import LengthRegulator
 from paddlespeech.t2s.modules.predictor.variance_predictor import VariancePredictor
 from paddlespeech.t2s.modules.tacotron2.decoder import Postnet
+from paddlespeech.t2s.modules.transformer.encoder import CNNDecoder
+from paddlespeech.t2s.modules.transformer.encoder import CNNPostnet
 from paddlespeech.t2s.modules.transformer.encoder import ConformerEncoder
 from paddlespeech.t2s.modules.transformer.encoder import TransformerEncoder
-# from paddlespeech.t2s.modules.style_encoder import StyleEncoder
 import sys
 sys.path.append("train/modules")
 from style_encoder import VAE, StyleEncoder
@@ -100,6 +102,12 @@ class FastSpeech2(nn.Layer):
             zero_triu: bool=False,
             conformer_enc_kernel_size: int=7,
             conformer_dec_kernel_size: int=31,
+            # for CNN Decoder
+            cnn_dec_dropout_rate: float=0.2,
+            cnn_postnet_dropout_rate: float=0.2,
+            cnn_postnet_resblock_kernel_sizes: List[int]=[256, 256],
+            cnn_postnet_kernel_size: int=5,
+            cnn_decoder_embedding_dim: int=256,
             # duration predictor
             duration_predictor_layers: int=2,
             duration_predictor_chans: int=384,
@@ -462,14 +470,21 @@ class FastSpeech2(nn.Layer):
         self.feat_out = nn.Linear(adim, odim * reduction_factor)
 
         # define postnet
-        self.postnet = (None if postnet_layers == 0 else Postnet(
-            idim=idim,
-            odim=odim,
-            n_layers=postnet_layers,
-            n_chans=postnet_chans,
-            n_filts=postnet_filts,
-            use_batch_norm=use_batch_norm,
-            dropout_rate=postnet_dropout_rate, ))
+        if decoder_type == 'cnndecoder':
+            self.postnet = CNNPostnet(
+                odim=odim,
+                kernel_size=cnn_postnet_kernel_size,
+                dropout_rate=cnn_postnet_dropout_rate,
+                resblock_kernel_sizes=cnn_postnet_resblock_kernel_sizes)
+        else:
+            self.postnet = (None if postnet_layers == 0 else Postnet(
+                idim=idim,
+                odim=odim,
+                n_layers=postnet_layers,
+                n_chans=postnet_chans,
+                n_filts=postnet_filts,
+                use_batch_norm=use_batch_norm,
+                dropout_rate=postnet_dropout_rate, ))
 
         nn.initializer.set_global_initializer(None)
 
@@ -569,6 +584,7 @@ class FastSpeech2(nn.Layer):
                  energy_std: paddle.Tensor=None,
                  robot: paddle.Tensor=None,
                  is_inference: bool=False,
+                 return_after_enc=False,
                  alpha: float=1.0,
                  spk_emb=None,
                  spk_id=None,
@@ -607,11 +623,11 @@ class FastSpeech2(nn.Layer):
         # forward duration predictor and variance predictors
         d_masks = make_pad_mask(ilens)
 
-        if self.stop_gradient_from_pitch_predictor:
+        if self.stop_gradient_from_pitch_predictor and not is_inference:
             p_outs = self.pitch_predictor(hs.detach(), d_masks.unsqueeze(-1))
         else:
             p_outs = self.pitch_predictor(hs, d_masks.unsqueeze(-1))
-        if self.stop_gradient_from_energy_predictor:
+        if self.stop_gradient_from_energy_predictor and not is_inference:
             e_outs = self.energy_predictor(hs.detach(), d_masks.unsqueeze(-1))
         else:
             e_outs = self.energy_predictor(hs, d_masks.unsqueeze(-1))
@@ -691,15 +707,21 @@ class FastSpeech2(nn.Layer):
                     [olen // self.reduction_factor for olen in olens.numpy()])
             else:
                 olens_in = olens
+            # (B, 1, T)
             h_masks = self._source_mask(olens_in)
         else:
             h_masks = None
-        # (B, Lmax, adim)
 
+        if return_after_enc:
+            return hs, h_masks
+        # (B, Lmax, adim)
         zs, _ = self.decoder(hs, h_masks)
         # (B, Lmax, odim)
-        before_outs = self.feat_out(zs).reshape(
-            (paddle.shape(zs)[0], -1, self.odim))
+        if self.decoder_type == 'cnndecoder':
+            before_outs = zs
+        else:
+            before_outs = self.feat_out(zs).reshape(
+                (paddle.shape(zs)[0], -1, self.odim))
 
         # postnet -> (B, Lmax//r * r, odim)
         if self.postnet is None:
@@ -709,6 +731,39 @@ class FastSpeech2(nn.Layer):
                 before_outs.transpose((0, 2, 1))).transpose((0, 2, 1))
 
         return before_outs, after_outs, d_outs, p_outs, e_outs, mu, logvar, z
+
+    def encoder_infer(
+            self,
+            text: paddle.Tensor,
+            alpha: float=1.0,
+            spk_emb=None,
+            spk_id=None,
+            tone_id=None,
+    ) -> Tuple[paddle.Tensor, paddle.Tensor, paddle.Tensor]:
+        # input of embedding must be int64
+        x = paddle.cast(text, 'int64')
+        # setup batch axis
+        ilens = paddle.shape(x)[0]
+
+        xs = x.unsqueeze(0)
+
+        if spk_emb is not None:
+            spk_emb = spk_emb.unsqueeze(0)
+
+        if tone_id is not None:
+            tone_id = tone_id.unsqueeze(0)
+
+        # (1, L, odim)
+        hs, h_masks = self._forward(
+            xs,
+            ilens,
+            is_inference=True,
+            return_after_enc=True,
+            alpha=alpha,
+            spk_emb=spk_emb,
+            spk_id=spk_id,
+            tone_id=tone_id)
+        return hs, h_masks
 
     def inference(
             self,
@@ -755,6 +810,8 @@ class FastSpeech2(nn.Layer):
         x = paddle.cast(text, 'int64')
         y = speech
 
+        d = durations
+
         # setup batch axis
         ilens = paddle.shape(x)[0]
 
@@ -770,12 +827,12 @@ class FastSpeech2(nn.Layer):
             tone_id = tone_id.unsqueeze(0)
         
         if use_teacher_forcing:
-            durations = durations.unsqueeze(0) if durations is not None else None
+            ds = d.unsqueeze(0) if d is not None else None
             _, outs, d_outs, p_outs, e_outs, mu, logvar, z = self._forward(
                 xs,
                 ilens,
                 ys,
-                ds=durations,
+                ds=ds,
                 spk_emb=spk_emb,
                 spk_id=spk_id,
                 tone_id=tone_id,
@@ -931,7 +988,6 @@ class StyleFastSpeech2Inference(FastSpeech2Inference):
 
     def forward(self,
                 text: paddle.Tensor,
-                durations: paddle.Tensor=None,
                 durations_scale: paddle.Tensor=None,
                 durations_bias: paddle.Tensor=None,
                 pitch_scale: paddle.Tensor=None,
@@ -940,8 +996,11 @@ class StyleFastSpeech2Inference(FastSpeech2Inference):
                 energy_bias: paddle.Tensor=None,
                 robot: paddle.Tensor=None,
                 spk_id: paddle.Tensor=None,
+                spk_emb: paddle.Tensor=None,
+                speech: paddle.Tensor=None,
                 use_teacher_forcing: paddle.Tensor=None,
-                speech: paddle.Tensor=None):
+                durations: paddle.Tensor=None,
+                ):
         """
 
         Args:
@@ -964,6 +1023,8 @@ class StyleFastSpeech2Inference(FastSpeech2Inference):
             Tensor: logmel
 
         """
+        assert(self.pitch_mean and self.pitch_std), "pitch_mean and pitch_std is None!"
+        assert(self.energy_mean and self.energy_std), "energy_mean and energy_std is None!"
         normalized_mel, d_outs, p_outs, e_outs, mu, logvar, z = self.acoustic_model.inference(
             text,
             speech=speech,
@@ -980,6 +1041,7 @@ class StyleFastSpeech2Inference(FastSpeech2Inference):
             energy_std=self.energy_std,
             robot=robot,
             spk_id=spk_id,
+            spk_emb=spk_emb,
             use_teacher_forcing=use_teacher_forcing)
 
         logmel = self.normalizer.inverse(normalized_mel)
