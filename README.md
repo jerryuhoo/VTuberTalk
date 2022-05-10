@@ -514,7 +514,9 @@ visualdl --logdir <log folder path>
 
 把下载的vocoder模型放在pretrained_models目录中
 
-### 4.1. 一键运行
+### 4.1. 测试训练模型的音频
+
+音频输出到train/test_e2e，静态模型输出到train/inference
 
 ```shell
 ./synthesize_e2e.sh
