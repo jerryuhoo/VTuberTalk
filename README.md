@@ -362,6 +362,8 @@ python tools/compute_statistics.py \
 
 #### normalize
 
+如果是在已有模型上替换speaker进行finetune，在这一步之前需要将生成的phone_id_map.txt替换为已有模型的音素词典，不然phone ip映射错误，对训练的发音产生影响。
+
 ##### 1. fastspeech2 模型
 
 ```shell
