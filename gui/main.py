@@ -171,11 +171,10 @@ class App(QMainWindow):
             paddle.set_device("gpu")  
 
         self.voice_cloning = None
-
-        self.onVoiceComboboxChanged(self.voice_combo.currentText())
         self.onTTSStyleComboboxChanged(self.tts_style_combo.currentText())
         self.onAcousticModelComboboxChanged(self.acoustic_model_combo.currentText())
         self.onVocModelComboboxChanged(self.voc_model_combo.currentText())
+        self.onVoiceComboboxChanged(self.voice_combo.currentText())
         print("gst,", self.use_gst)
         print("vae,", self.use_vae)
 
