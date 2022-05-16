@@ -24,12 +24,14 @@ def process(args, outdir):
         else:
             continue
         position = path + file
-        with open(position ,'r', encoding='utf-8') as f:
-            for line in f.readlines():
-                line_len = len(line)
-                count[line_len] += 1
-                if line_len < int(args.min) or line_len > int(args.max):
-                    move(path, file, outdir)
+        line_len = 0
+        with open(position, 'r', encoding='utf-8') as f:
+            line = f.readline()
+            line_len = len(line)
+            count[line_len] += 1
+        f.close()
+        if line_len < int(args.min) or line_len > int(args.max):
+            move(path, file, outdir)
 
     for i in range(len(count)):
         print("长度为", i, "的有", count[i], "条。")
