@@ -24,7 +24,7 @@ def process(args, outdir):
         else:
             continue
         position = path + file
-        with open(position ,'r') as f:
+        with open(position ,'r', encoding='utf-8') as f:
             for line in f.readlines():
                 line_len = len(line)
                 count[line_len] += 1
