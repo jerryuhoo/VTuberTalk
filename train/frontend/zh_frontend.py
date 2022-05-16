@@ -116,7 +116,7 @@ class Frontend():
                 if pos == 'eng':
                     continue
                 sub_initials, sub_finals = self._get_initials_finals(word)
-                print("sub_initials", sub_initials, "sub_finals", sub_finals)
+                # print("sub_initials", sub_initials, "sub_finals", sub_finals)
                 sub_finals = self.tone_modifier.modified_tone(word, pos,
                                                               sub_finals)
                 if with_erhua:

@@ -43,6 +43,8 @@ if [ ${fastspeech2} == True ] && [ ${multiple} == True ]; then
         --am_config=exp/${am_model_name}/default_multi.yaml \
         --am_ckpt=exp/${am_model_name}/checkpoints/${am_checkpoints}.pdz \
         --am_stat=exp/${am_model_name}/speech_stats.npy \
+        --pitch_stat=exp/${am_model_name}/pitch_stats.npy \
+        --energy_stat=exp/${am_model_name}/energy_stats.npy \
         --voc=${voc_type} \
         --voc_config=pretrained_models/${voc_model_name}/${voc_config}.yaml \
         --voc_ckpt=pretrained_models/${voc_model_name}/checkpoints/${voc_checkpoints}.pdz \
@@ -68,6 +70,8 @@ if [ ${fastspeech2} == True ] && [ ${multiple} == False ]; then
         --am_config=exp/${am_model_name}/default_multi.yaml \
         --am_ckpt=exp/${am_model_name}/checkpoints/${am_checkpoints}.pdz \
         --am_stat=exp/${am_model_name}/speech_stats.npy \
+        --pitch_stat=exp/${am_model_name}/pitch_stats.npy \
+        --energy_stat=exp/${am_model_name}/energy_stats.npy \
         --voc=${voc_type} \
         --voc_config=pretrained_models/${voc_model_name}/${voc_config}.yaml \
         --voc_ckpt=pretrained_models/${voc_model_name}/checkpoints/${voc_checkpoints}.pdz \

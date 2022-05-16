@@ -248,7 +248,7 @@ def main():
         test_wav_files = wav_files[num_train + num_dev:]
 
     elif args.dataset == "other":
-        sub_num_dev = 100
+        sub_num_dev = 10
         wav_dir = rootdir / "wav"
         train_wav_files = []
         dev_wav_files = []
