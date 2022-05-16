@@ -2,11 +2,14 @@ set -e
 
 stage=0
 stop_stage=100
-model_name=speedyspeech_azi_nanami_1_15 #speedyspeech_azi_nanami_1_9 #gst_fastspeech2_azi_nanami_2022_1_9 #gst_fastspeech2_4people_new
-fastspeech2=False
+model_name=fastspeech2_aishell3_english
+fastspeech2=True
 multiple=True
 use_gst=False
 use_vae=False
+
+# config
+config=default_multi # default_multi # conformer
 
 if [ ${fastspeech2} == True ] && [ ${multiple} == False ]; then
     echo "model: fastspeech2, single"
@@ -78,7 +81,7 @@ if [ ${fastspeech2} == True ] && [ ${multiple} == False ]; then
         python train/exps/fastspeech2/train.py \
             --train-metadata=dump/train/norm/metadata.jsonl \
             --dev-metadata=dump/dev/norm/metadata.jsonl \
-            --config=train/conf/fastspeech2/default_multi.yaml \
+            --config=train/conf/fastspeech2/default_single.yaml \
             --output-dir=exp/$model_name \
             --ngpu=1 \
             --phones-dict=dump/phone_id_map.txt \
@@ -105,7 +108,7 @@ if [ ${fastspeech2} == True ] && [ ${multiple} == True ]; then
         python tools/gen_duration_from_textgrid.py \
             --inputdir=data/TextGrid \
             --output=data/durations.txt \
-            --config=train/conf/fastspeech2/default_multi.yaml || exit -1
+            --config=train/conf/fastspeech2/$config.yaml || exit -1
     fi
 
     if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
@@ -115,7 +118,7 @@ if [ ${fastspeech2} == True ] && [ ${multiple} == True ]; then
             --rootdir=data/ \
             --dumpdir=dump \
             --dur-file=data/durations.txt \
-            --config=train/conf/fastspeech2/default_multi.yaml \
+            --config=train/conf/fastspeech2/$config.yaml \
             --num-cpu=16 \
             --cut-sil=True || exit -1
     fi
@@ -170,7 +173,7 @@ if [ ${fastspeech2} == True ] && [ ${multiple} == True ]; then
         python train/exps/fastspeech2/train.py \
             --train-metadata=dump/train/norm/metadata.jsonl \
             --dev-metadata=dump/dev/norm/metadata.jsonl \
-            --config=train/conf/fastspeech2/default_multi.yaml \
+            --config=train/conf/fastspeech2/$config.yaml \
             --output-dir=exp/$model_name \
             --ngpu=1 \
             --phones-dict=dump/phone_id_map.txt \
@@ -252,7 +255,7 @@ if [ ${fastspeech2} == False ] && [ ${multiple} == False ]; then
             --use-relative-path=True || exit -1
     fi
 
-    if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ] && [ ${use_gst} == False ]; then
+    if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ] ; then
         echo "train"
         python train/exps/speedyspeech/train.py \
             --train-metadata=dump/train/norm/metadata.jsonl \
@@ -337,7 +340,7 @@ if [ ${fastspeech2} == False ] && [ ${multiple} == True ]; then
             --use-relative-path=True || exit -1
     fi
 
-    if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ] && [ ${use_gst} == False ]; then
+    if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ] ; then
         echo "train"
         python train/exps/speedyspeech/train.py \
             --train-metadata=dump/train/norm/metadata.jsonl \
