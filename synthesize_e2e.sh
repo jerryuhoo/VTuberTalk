@@ -58,6 +58,7 @@ if [ ${fastspeech2} == True ] && [ ${multiple} == True ]; then
         --ngpu=${ngpu} \
         --spk_id=${spk_id} \
         --use_gst=${use_gst} \
+        --use_vae=${use_vae} \
         --use_style=${use_style} \
         --pitch_stat=exp/${am_model_name}/pitch_stats.npy \
         --energy_stat=exp/${am_model_name}/energy_stats.npy
@@ -83,6 +84,7 @@ if [ ${fastspeech2} == True ] && [ ${multiple} == False ]; then
         --phones_dict=exp/${am_model_name}/phone_id_map.txt \
         --ngpu=${ngpu} \
         --use_gst=${use_gst} \
+        --use_vae=${use_vae} \
         --use_style=${use_style} \
         --pitch_stat=exp/${am_model_name}/pitch_stats.npy \
         --energy_stat=exp/${am_model_name}/energy_stats.npy

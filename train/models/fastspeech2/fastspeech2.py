@@ -996,7 +996,7 @@ class StyleFastSpeech2Inference(FastSpeech2Inference):
                 energy_bias: paddle.Tensor=None,
                 robot: paddle.Tensor=None,
                 spk_id: paddle.Tensor=None,
-                spk_emb: paddle.Tensor=None,
+                # spk_emb: paddle.Tensor=None,
                 speech: paddle.Tensor=None,
                 use_teacher_forcing: paddle.Tensor=None,
                 durations: paddle.Tensor=None,
@@ -1023,7 +1023,7 @@ class StyleFastSpeech2Inference(FastSpeech2Inference):
             Tensor: logmel
 
         """
-        
+
         normalized_mel, d_outs, p_outs, e_outs, mu, logvar, z = self.acoustic_model.inference(
             text,
             speech=speech,
@@ -1040,7 +1040,7 @@ class StyleFastSpeech2Inference(FastSpeech2Inference):
             energy_std=self.energy_std,
             robot=robot,
             spk_id=spk_id,
-            spk_emb=spk_emb,
+            # spk_emb=spk_emb,
             use_teacher_forcing=use_teacher_forcing)
 
         logmel = self.normalizer.inverse(normalized_mel)
@@ -1078,7 +1078,15 @@ class FastSpeech2Loss(nn.Layer):
 
     def kl_anneal_function(self, anneal_function, lag, step, k, x0, upper):
         if anneal_function == 'logistic':
-            return float(upper / (upper + np.exp(-k * (step - x0))))
+            if step < 15000:
+                K = 100
+            else:
+                K = 400
+            if step % K == 0:
+                gate = 1
+            else:
+                gate = 0
+            return float(upper / (upper + np.exp(-k * (step - x0)))) * gate
         elif anneal_function == 'linear':
             if step > lag:
                 return min(upper, step / x0)

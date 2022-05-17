@@ -158,14 +158,14 @@ def get_am_inference(args, am_config):
     am_dataset = args.am[args.am.index('_') + 1:]
 
     am_class = dynamic_import(am_name, model_alias)
-    if args.use_gst or args.use_style:
+    if args.use_gst or args.use_vae or args.use_style:
         am_inference_class = dynamic_import(am_name + '_style_inference', model_alias)
     else:
         am_inference_class = dynamic_import(am_name + '_inference', model_alias)
 
     if am_name == 'fastspeech2':
         am = am_class(
-            idim=vocab_size, odim=odim, spk_num=spk_num, **am_config["model"])
+            idim=vocab_size, odim=odim, spk_num=spk_num, use_gst=args.use_gst, use_vae=args.use_vae, **am_config["model"])
     elif am_name == 'speedyspeech':
         am = am_class(
             vocab_size=vocab_size,
@@ -182,7 +182,7 @@ def get_am_inference(args, am_config):
     am_std = paddle.to_tensor(am_std)
     am_normalizer = ZScore(am_mu, am_std)
 
-    if args.use_gst or args.use_style:
+    if args.use_gst or args.use_vae or args.use_style:
         fastspeech2_pitch_stat = args.pitch_stat
         fastspeech2_energy_stat = args.energy_stat
         am_inference = am_inference_class(
@@ -224,14 +224,14 @@ def get_voc_inference(args, voc_config):
 # to static
 def am_to_static(args, am_inference, am_name, am_dataset):
     if am_name == 'fastspeech2':
-        if am_dataset in {"aishell3", "vctk"} and args.speaker_dict and not args.use_gst and not args.use_style:
+        if am_dataset in {"aishell3", "vctk"} and args.speaker_dict and not args.use_gst and not args.use_vae and not args.use_style:
             am_inference = jit.to_static(
                 am_inference,
                 input_spec=[
                     InputSpec([-1], dtype=paddle.int64),
                     InputSpec([1], dtype=paddle.int64),
                 ], )
-        elif am_dataset in {"aishell3", "vctk"} and args.speaker_dict and args.use_gst:
+        elif am_dataset in {"aishell3", "vctk"} and args.speaker_dict and (args.use_gst or args.use_vae):
                 am_inference = jit.to_static(
                     am_inference,
                     input_spec=[

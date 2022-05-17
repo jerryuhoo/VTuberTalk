@@ -65,7 +65,7 @@ def evaluate(args):
     # whether dygraph to static
     if args.inference_dir:
         # acoustic model
-        am_inference = am_to_static(args, am_inference, am_name, am_dataset)
+        # am_inference = am_to_static(args, am_inference, am_name, am_dataset)
 
         # vocoder
         voc_inference = voc_to_static(args, voc_inference)
@@ -105,10 +105,10 @@ def evaluate(args):
                     # acoustic model
                     if am_name == 'fastspeech2':
                         # multi speaker
-                        if am_dataset in {"aishell3", "vctk"} and not args.use_gst and not args.use_style:
+                        if am_dataset in {"aishell3", "vctk"} and not args.use_gst and not args.use_vae and not args.use_style:
                             spk_id = paddle.to_tensor(args.spk_id)
                             mel = am_inference(part_phone_ids, spk_id)
-                        elif am_dataset in {"aishell3", "vctk"} and args.use_gst:
+                        elif am_dataset in {"aishell3", "vctk"} and (args.use_gst or args.use_vae):
                             speech = load_ref(args)
                             spk_id = paddle.to_tensor(args.spk_id, dtype='int64')
                             d_scale = paddle.to_tensor(1.0, dtype='float32')
@@ -164,7 +164,7 @@ def evaluate(args):
 def load_ref(args):
     with open(args.am_config) as f:
         am_config = CfgNode(yaml.safe_load(f))
-    wav, _ = librosa.load("ref_audio.wav", sr=am_config.fs)
+    wav, _ = librosa.load("normal.wav", sr=am_config.fs)
     if len(wav.shape) != 1 or np.abs(wav).max() > 1.0:
         return None
     assert len(wav.shape) == 1, f"ref audio is not a mono-channel audio."
@@ -242,6 +242,8 @@ def parse_args():
         "--speaker_dict", type=str, default=None, help="speaker id map file.")
     parser.add_argument(
         "--use_gst", type=str2bool, default=False, help="use gst.")
+    parser.add_argument(
+        "--use_vae", type=str2bool, default=False, help="use vae.")
     parser.add_argument(
         "--use_style", type=str2bool, default=False, help="use style inference.")
     parser.add_argument(
