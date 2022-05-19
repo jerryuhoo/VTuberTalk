@@ -132,7 +132,7 @@ python tools/video_to_wav.py --path <data to folder or file>
 可选项：如果视频过长，使用以下的命令将视频切割
 
 ```shell
-python tools/cut_source.py --path <data/wav/video/> --min <minute to cut> --sr <sample rate>
+python tools/cut_source.py --path <data/wav_temp/video/> --min <minute to cut> --sr <sample rate>
 ```
 
 其中，在video_to_wav可设置采样率，一般设置为16000，因为如果要使用语音切分工具的话，16000是支持的采样率之一。
@@ -144,8 +144,8 @@ python tools/cut_source.py --path <data/wav/video/> --min <minute to cut> --sr <
 ```shell
 pip install spleeter
 spleeter separate \
-     -o <data/wav/speaker_name/clean_raw/> \
-     <data/wav/speaker_name/raw/*.wav>
+     -o <data/wav_temp/speaker_name/clean_raw/> \
+     <data/wav_temp/speaker_name/raw/*.wav>
 ```
 
 > 如果遇到CUDA的报错试试执行`export TF_FORCE_GPU_ALLOW_GROWTH=true`
@@ -153,13 +153,13 @@ spleeter separate \
 获取降噪后的人声并且重命名，这步做完之后的文件在clean_raw2，可以删除clean_raw。
 
 ```shell
-python tools/glob_spleeter_vocals.py --path <data/wav/speaker_name/clean_raw/>
+python tools/glob_spleeter_vocals.py --path <data/wav_temp/speaker_name/clean_raw/>
 ```
 
 降噪后又变成了双声道，因此需要执行
 
 ```shell
-python tools/audio_to_mono.py --path <data/wav/speaker_name/clean_raw2/>
+python tools/audio_to_mono.py --path <data/wav_temp/speaker_name/clean_raw2/>
 ```
 
 ### 2.3. 将音频分割成片段
@@ -169,13 +169,13 @@ python tools/audio_to_mono.py --path <data/wav/speaker_name/clean_raw2/>
 音频分割使用了webrtcvad模块，其中第一个参数aggressiveness是分割检测的敏感度，数字越大，对于静音检测越敏感，分割的音频个数也越多。范围为0～3。
 
 ```shell
-python tools/split_audio.py --ag <aggressiveness> --in_path <data/wav/speaker_name/clean_raw2/>
+python tools/split_audio.py --ag <aggressiveness> --in_path <data/wav_temp/speaker_name/clean_raw2/>
 ```
 
 ### 2.4. 使用ASR获得文本
 
 ```shell
-python tools/gen_text.py --path <data/wav/speaker_name/split/> --lang <language: 'en' or 'zh'>
+python tools/gen_text.py --path <data/wav_temp/speaker_name/split/> --lang <language: 'en' or 'zh'>
 ```
 
 ### 2.5. 使用字幕获得文本
@@ -189,7 +189,7 @@ python tools/split_audio_by_srt.py --path <data>
 ### 2.6. 去除过长过短文本
 
 ```shell
-python tools/data_filter.py --path <data/wav/speaker_name/split/>
+python tools/data_filter.py --path <data/wav_temp/speaker_name/split/>
 ```
 
 ### 2.7. 文本纠正
@@ -197,22 +197,30 @@ python tools/data_filter.py --path <data/wav/speaker_name/split/>
 收集所有的文本到一个txt文件中。
 
 ```shell
-python tools/glob_text.py --path <data/wav/speaker_name/split/>
+python tools/glob_text.py --path <data/wav_temp/speaker_name/split/>
 ```
 
 打开txt文件，修改错字后再运行
 
 ```shell
-python tools/revise_text.py --path <data/wav/speaker_name/split/>
+python tools/revise_text.py --path <data/wav_temp/speaker_name/split/>
 ```
 
 ### 2.8. 汉字转拼音
 
 ```shell
-python tools/hanzi_to_pinyin.py --path <data/wav/speaker_name/split/>
+python tools/hanzi_to_pinyin.py --path <data/wav_temp/speaker_name/split/>
 ```
 
-### 2.9. MFA音素对齐
+### 2.9. 清理文件
+
+处理后有用的文件只有wav_temp/speaker/split和TextGrid_temp中的信息，在做mfa之前，把制作好的单人数据集中的split文件夹中的所有内容移动到wav/speaker里，同时把TextGrid_temp里的文件夹移动到TextGrid里。
+
+```shell
+cp -r data/wav_temp/$speaker/split/ data/wav/$speaker/
+```
+
+### 2.10. MFA音素对齐
 
 本项目使用了百度PaddleSpeech的fastspeech2模块作为tts声学模型。
 
@@ -224,6 +232,8 @@ conda install montreal-forced-aligner
 ```
 
 自己训练一个，详见[MFA训练教程](https://montreal-forced-aligner.readthedocs.io/en/latest/first_steps/index.html#first-steps-align-train-acoustic-model)
+
+> 如果是中英文混合训练需要使用pinyin_eng.dict，纯中文则用pinyin.dict
 
 单人数据集：
 
@@ -249,7 +259,7 @@ mfa align <data/wav/speaker_name/split/> MFA/pinyin.dict MFA/mandarin.zip <data/
 
 > 如果要生成MFA1.x版本（包含sp和sil信息）需要加`--disable_textgrid_cleanup True`
 
-### 2.10. 生成其他预处理文件
+### 2.11. 生成其他预处理文件
 
 #### 一键运行
 
@@ -269,17 +279,6 @@ python tools/gen_duration_from_textgrid.py \
 ```
 
 ##### 2. speedyspeech 模型
-
-单人
-
-```shell
-python tools/gen_duration_from_textgrid.py \
-    --inputdir=data/TextGrid \
-    --output=data/durations.txt \
-    --config=train/conf/speedyspeech/default.yaml
-```
-
-多人
 
 ```shell
 python tools/gen_duration_from_textgrid.py \
@@ -304,20 +303,6 @@ python train/exps/fastspeech2/preprocess.py \
 ```
 
 ##### 2. speedyspeech 模型
-
-单人
-
-```shell
-python train/exps/speedyspeech/preprocess.py \
-    --dataset=other \
-    --rootdir=data/ \
-    --dumpdir=dump \
-    --dur-file=data/durations.txt \
-    --config=train/conf/speedyspeech/default.yaml \
-    --num-cpu=16 \
-    --cut-sil=True \
-    --use-relative-path=True
-```
 
 多人
 
@@ -397,34 +382,6 @@ python train/exps/fastspeech2/normalize.py \
 
 ##### 2. speedyspeech 模型
 
-单人
-
-```shell
-python train/exps/speedyspeech/normalize.py \
-    --metadata=dump/train/raw/metadata.jsonl \
-    --dumpdir=dump/train/norm \
-    --stats=dump/train/feats_stats.npy \
-    --phones-dict=dump/phone_id_map.txt \
-    --tones-dict=dump/tone_id_map.txt \
-    --use-relative-path=True
-
-python train/exps/speedyspeech/normalize.py \
-    --metadata=dump/dev/raw/metadata.jsonl \
-    --dumpdir=dump/dev/norm \
-    --stats=dump/train/feats_stats.npy \
-    --phones-dict=dump/phone_id_map.txt \
-    --tones-dict=dump/tone_id_map.txt \
-    --use-relative-path=True
-
-python train/exps/speedyspeech/normalize.py \
-    --metadata=dump/test/raw/metadata.jsonl \
-    --dumpdir=dump/test/norm \
-    --stats=dump/train/feats_stats.npy \
-    --phones-dict=dump/phone_id_map.txt \
-    --tones-dict=dump/tone_id_map.txt \
-    --use-relative-path=True
-```
-
 多人
 
 ```shell
@@ -472,20 +429,6 @@ python train/exps/fastspeech2/train.py \
 ```
 
 ### 3.2. speedyspeech模型
-
-单人
-
-```shell
-python train/exps/speedyspeech/train.py \
-    --train-metadata=dump/train/norm/metadata.jsonl \
-    --dev-metadata=dump/dev/norm/metadata.jsonl \
-    --config=train/conf/speedyspeech/default.yaml \
-    --output-dir=exp/speedyspeech_bili3_aishell3 \
-    --ngpu=1 \
-    --phones-dict=dump/phone_id_map.txt \
-    --tones-dict=dump/tone_id_map.txt \
-    --use-relative-path=True
-```
 
 多人
 
@@ -611,25 +554,20 @@ python gui/main.py
 
 - [x] 添加GST模块。
 - [x] spleeter降噪。
-- [ ] 静态模型推理。
+- [x] 静态模型推理。
 - [ ] 优化ASR流程，目前batch size = 1，速度慢。
-- [ ] preprocess优化，不需要重复处理数据集。
-- [ ] 小规模数据集训练（AdaSpeech）。
 - [ ] VAE情感控制。
+- [ ] 支持VITS。
 
 ## 7. FAQ
 
-### 我啥也不懂，不是程序员，这个到底怎么用？
+### 使用教程和预训练模型？
 
-到时候发布模型的时候，我会一起出视频教程。
-
-### 那你啥时候会发布模型？
-
-尽量1月底吧，目前还在试模型效果，效果还没到最好。
+目前暂时没有。
 
 ### 我的电脑可以训练吗？
 
-语音合成需要的显卡还是配置比较高的，我用的是3090的卡，我的建议是如果你要训练选择speedyspeech模型，这个模型比fastspeech2速度快很多，最终我发布的模型也会是speedyspeech。如果你是CPU的话那还是训练不起来的。
+语音合成需要的显卡还是配置比较高的，我用的是3090的卡，我的建议是如果你要训练选择speedyspeech模型，这个模型比fastspeech2速度快很多，如果你是CPU的话那还是训练不起来的。
 
 ### 我训练好了，但是感觉效果很差？
 

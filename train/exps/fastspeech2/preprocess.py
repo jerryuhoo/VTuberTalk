@@ -293,7 +293,7 @@ def main():
             else:
                 train_wav_files += wav_files
     elif args.dataset == "other":
-        sub_num_dev = 5
+        sub_num_dev = 10
         wav_dir = rootdir / "wav"
         train_wav_files = []
         dev_wav_files = []

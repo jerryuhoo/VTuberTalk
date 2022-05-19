@@ -9,7 +9,7 @@ max_text=60
 use_spleeter=True
 
 stage=0
-stop_stage=7
+stop_stage=8
 
 if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
     # cut video
@@ -81,6 +81,12 @@ if [ ${stage} -le 6 ] && [ ${stop_stage} -ge 6 ]; then
 fi
 
 if [ ${stage} -le 7 ] && [ ${stop_stage} -ge 7 ]; then
+    echo "move data and TextGrid from wav_temp to wav"
+    cp -r data/wav_temp/$speaker/split/ data/wav/$speaker/ || exit -1
+fi
+
+if [ ${stage} -le 8 ] && [ ${stop_stage} -ge 8 ]; then
     echo "mfa training"
-    mfa train data/wav_temp/$speaker/split/ MFA/pinyin_eng.dict MFA/$speaker.zip data/TextGrid_temp/$speaker/ --clean || exit -1
+    # mfa train data/wav_temp/$speaker/split/ MFA/pinyin_eng.dict MFA/$speaker.zip data/TextGrid_temp/$speaker/ --clean || exit -1
+    mfa train data/wav/ MFA/pinyin_eng.dict MFA/mandarin.zip data/TextGrid/ --clean || exit -1
 fi
