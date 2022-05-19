@@ -162,7 +162,7 @@ class App(QMainWindow):
         self.wav = None
         self.speaker_name_dict = {}
         self.spk_id = 0
-        self.use_static = False
+        self.use_static = True
         self.fs = 24000
 
         if self.ngpu == 0:
@@ -201,6 +201,7 @@ class App(QMainWindow):
             self.speaker_name_dict[speaker_name] = speaker_id
             self.voice_combo.addItem(speaker_name)
         f.close()
+        self.spk_id = 0
     
     def loadDynamicAcousticModel(self):
         # acoustic model
@@ -330,18 +331,20 @@ class App(QMainWindow):
     def loadStaticAcousticModel(self):
         # acoustic model
         if self.acoustic_model == "fastspeech2":
-            self.phones_dict = "pretrained_models/fastspeech2_aishell3_english_static/phone_id_map.txt"
-            self.speaker_dict = "pretrained_models/fastspeech2_aishell3_english_static/speaker_id_map.txt"
+            self.acoustic_model_path = "pretrained_models/fastspeech2_aishell3_english_static/"
             self.am_inference = paddle.jit.load(
-                            os.path.join("pretrained_models/fastspeech2_aishell3_english_static", "fastspeech2_aishell3"))
+                            os.path.join(self.acoustic_model_path, "fastspeech2_aishell3"))
                 
         elif self.acoustic_model == "speedyspeech":
-            self.tones_dict = "pretrained_models/speedyspeech_azi_nanami_static/tone_id_map.txt"
-            self.phones_dict = "pretrained_models/speedyspeech_azi_nanami_static/phone_id_map.txt"
-            self.speaker_dict="pretrained_models/speedyspeech_azi_nanami_static/speaker_id_map.txt"
+            self.acoustic_model_path = "pretrained_models/speedyspeech_azi_nanami_static/"
+            self.tones_dict = os.path.join(self.acoustic_model_path, "tone_id_map.txt")
             self.am_inference = paddle.jit.load(
-                            os.path.join("pretrained_models/speedyspeech_azi_nanami_static", "speedyspeech_csmsc"))
+                            os.path.join(self.acoustic_model_path, "speedyspeech_csmsc"))
+
+        self.phones_dict = os.path.join(self.acoustic_model_path, "phone_id_map.txt")
+        self.speaker_dict = os.path.join(self.acoustic_model_path, "speaker_id_map.txt")
         self.loadSpeakerName(self.speaker_dict)
+
         fields = ["utt_id", "text"]
         self.spk_num = None
         if self.speaker_dict:
@@ -356,11 +359,6 @@ class App(QMainWindow):
         else:
             print("single speaker")
         print("spk_num:", self.spk_num)
-
-        # with open(self.phones_dict, "r", encoding='UTF-8') as f:
-        #     phn_id = [line.strip().split() for line in f.readlines()]
-        # vocab_size = len(phn_id)
-        # print("vocab_size:", vocab_size)
 
     def loadStaticVocoderModel(self):   
         # vocoder
