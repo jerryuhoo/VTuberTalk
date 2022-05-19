@@ -50,65 +50,45 @@ class App(QMainWindow):
     def initUI(self):
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
-    
+
+        button_x = 20
+        label_x = 160
+        combobox_x = 240
+
         # Create textbox
         self.textbox = QLineEdit(self)
-        self.textbox.move(20, 20)
+        self.textbox.move(button_x, 20)
         self.textbox.resize(360, 40)
         
         # generate button
         self.generate_button = QPushButton('合成', self)
-        self.generate_button.move(20, 80)
+        self.generate_button.move(button_x, 80)
         self.generate_button.clicked.connect(self.onGenerateButtonClicked)
         
         # play button
         self.play_button = QPushButton('重播', self)
-        self.play_button.move(20, 120)
+        self.play_button.move(button_x, 120)
         self.play_button.clicked.connect(self.playAudioFile)
 
         # save button
         self.save_button = QPushButton('保存', self)
-        self.save_button.move(20, 160)
+        self.save_button.move(button_x, 160)
         self.save_button.clicked.connect(self.saveWavFile)
 
         # voice combobox
         self.voice_label = QLabel(self)
-        self.voice_label.move(160, 80)
+        self.voice_label.move(label_x, 80)
         self.voice_label.setText("声音：")
 
         self.voice_combo = QComboBox(self)
 
-        self.voice_combo.move(240, 80)
+        self.voice_combo.move(combobox_x, 80)
         self.voice_combo.resize(120, 40)
         self.voice_combo.activated[str].connect(self.onVoiceComboboxChanged)
 
-        # tts model
-        self.tts_style_label = QLabel(self)
-        self.tts_style_label.move(160, 120)
-        self.tts_style_label.setText("风格：")
-
-        self.tts_style_combo = QComboBox(self)
-        self.tts_style_combo.addItem("正常")
-        self.tts_style_combo.addItem("机器人")
-        self.tts_style_combo.addItem("高音")
-        self.tts_style_combo.addItem("低音")
-
-        self.tts_style_combo.move(240, 120)
-        self.tts_style_combo.resize(120, 40)
-        self.tts_style_combo.activated[str].connect(self.onTTSStyleComboboxChanged)
-
-        self.tts_speed_label = QLabel(self)
-        self.tts_speed_label.move(160, 160)
-        self.tts_speed_label.setText("速度：")
-
-        self.tts_speed_box = QLineEdit(self)
-        self.tts_speed_box.setText("1.0")
-        self.tts_speed_box.move(240, 160)
-        self.tts_speed_box.resize(120, 40)
-
         #  acoustic model
         self.acoustic_model_label = QLabel(self)
-        self.acoustic_model_label.move(160, 200)
+        self.acoustic_model_label.move(label_x, 120)
         self.acoustic_model_label.setText("模型：")
 
         self.acoustic_model_combo = QComboBox(self)
@@ -117,18 +97,13 @@ class App(QMainWindow):
         self.acoustic_model_combo.addItem("speedyspeech")
         self.acoustic_model_combo.addItem("vae-fastspeech2")
 
-        self.acoustic_model_combo.move(240, 200)
+        self.acoustic_model_combo.move(combobox_x, 120)
         self.acoustic_model_combo.resize(120, 40)
         self.acoustic_model_combo.activated[str].connect(self.onAcousticModelComboboxChanged)
 
-        # # model path
-        # self.ref_audio_button = QPushButton('加载模型路径', self)
-        # self.ref_audio_button.move(20, 200)
-        # self.ref_audio_button.clicked.connect(self.loadRefWavFile)
-
         # vocoder model
         self.voc_model_label = QLabel(self)
-        self.voc_model_label.move(160, 240)
+        self.voc_model_label.move(label_x, 160)
         self.voc_model_label.setText("vocoder：")
 
         self.voc_model_combo = QComboBox(self)
@@ -136,17 +111,41 @@ class App(QMainWindow):
         self.voc_model_combo.addItem("hifigan")
         self.voc_model_combo.addItem("hifigan_ss")
 
-        self.voc_model_combo.move(240, 240)
+        self.voc_model_combo.move(combobox_x, 160)
         self.voc_model_combo.resize(120, 40)
         self.voc_model_combo.activated[str].connect(self.onVocModelComboboxChanged)
 
+        # tts style
+        self.tts_style_label = QLabel(self)
+        self.tts_style_label.move(label_x, 200)
+        self.tts_style_label.setText("风格：")
+
+        self.tts_style_combo = QComboBox(self)
+        self.tts_style_combo.addItem("正常")
+        self.tts_style_combo.addItem("机器人")
+        self.tts_style_combo.addItem("高音")
+        self.tts_style_combo.addItem("低音")
+
+        self.tts_style_combo.move(combobox_x, 200)
+        self.tts_style_combo.resize(120, 40)
+        self.tts_style_combo.activated[str].connect(self.onTTSStyleComboboxChanged)
+
+        self.tts_speed_label = QLabel(self)
+        self.tts_speed_label.move(label_x, 240)
+        self.tts_speed_label.setText("速度：")
+
+        self.tts_speed_box = QLineEdit(self)
+        self.tts_speed_box.setText("1.0")
+        self.tts_speed_box.move(combobox_x, 240)
+        self.tts_speed_box.resize(120, 40)
+
         # ref audio
         self.ref_audio_button = QPushButton('参考音频', self)
-        self.ref_audio_button.move(20, 240)
+        self.ref_audio_button.move(button_x, 240)
         self.ref_audio_button.clicked.connect(self.loadRefWavFile)
 
         self.ref_audio_label = QLabel(self)
-        self.ref_audio_label.move(160, 280)
+        self.ref_audio_label.move(label_x, 280)
         self.ref_audio_label.resize(380, 40)
         self.ref_audio_label.setText("未加载参考音频")
         self.ref_audio_path = ""
@@ -611,15 +610,39 @@ class App(QMainWindow):
         elif text == "低音":
             self.style = "low_voice"
 
+    def setGstUIVisible(self, isVisible):
+        if isVisible:
+            self.ref_audio_button.show()
+            self.ref_audio_label.show()
+        else:
+            self.ref_audio_button.hide()
+            self.ref_audio_label.hide()
+    
+    def setFastspeechUIVisible(self, isVisible):
+        if isVisible:
+            self.tts_style_label.show()
+            self.tts_style_combo.show()
+            self.tts_speed_label.show()
+            self.tts_speed_box.show()
+        else:
+            self.tts_style_label.hide()
+            self.tts_style_combo.hide()
+            self.tts_speed_label.hide()
+            self.tts_speed_box.hide()
+
     def onAcousticModelComboboxChanged(self, text):
         if text == "gst-fastspeech2":
             self.acoustic_model = "fastspeech2"
             self.use_gst = True
             self.use_vae = False
+            self.setGstUIVisible(True)
+            self.setFastspeechUIVisible(True)
         elif text == "fastspeech2":
             self.acoustic_model = "fastspeech2"
             self.use_gst = False
             self.use_vae = False
+            self.setGstUIVisible(False)
+            self.setFastspeechUIVisible(True)
         elif text == "gst-speedyspeech":
             self.messageDialog("暂不支持")
             return
@@ -627,10 +650,14 @@ class App(QMainWindow):
             self.acoustic_model = "speedyspeech"
             self.use_gst = False
             self.use_vae = False
+            self.setGstUIVisible(False)
+            self.setFastspeechUIVisible(False)
         elif text == "vae-fastspeech2":
             self.acoustic_model = "fastspeech2"
             self.use_vae = True
             self.use_gst = False
+            self.setGstUIVisible(True)
+            self.setFastspeechUIVisible(True)
         self.onVoiceComboboxChanged(self.voice_combo.currentText())
         if not self.use_static:
             self.loadDynamicAcousticModel()
