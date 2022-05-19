@@ -162,7 +162,7 @@ class App(QMainWindow):
         self.wav = None
         self.speaker_name_dict = {}
         self.spk_id = 0
-        self.use_static = True
+        self.use_static = False
         self.fs = 24000
 
         if self.ngpu == 0:
@@ -193,6 +193,8 @@ class App(QMainWindow):
 
     def loadSpeakerName(self, speaker_id_file):
         f = open(speaker_id_file, "r") 
+        self.speaker_name_dict = {}
+        self.voice_combo.clear()
         for line in f.readlines():
             speaker_name = line.strip().split()[0]
             speaker_id = line.strip().split()[1]
@@ -203,46 +205,36 @@ class App(QMainWindow):
     def loadDynamicAcousticModel(self):
         # acoustic model
         if self.acoustic_model == "fastspeech2":
-            if self.use_gst:          
-                self.fastspeech2_stat = "exp/gst_fastspeech2_azi_nanami/speech_stats.npy"
-                self.fastspeech2_pitch_stat = "exp/gst_fastspeech2_azi_nanami/pitch_stats.npy"
-                self.fastspeech2_energy_stat = "exp/gst_fastspeech2_azi_nanami/energy_stats.npy"
-                self.phones_dict = "exp/gst_fastspeech2_azi_nanami/phone_id_map.txt"
-                self.speaker_dict="exp/gst_fastspeech2_azi_nanami/speaker_id_map.txt"
-                self.fastspeech2_config_path = "exp/gst_fastspeech2_azi_nanami/default_multi.yaml"
-                self.fastspeech2_checkpoint = "exp/gst_fastspeech2_azi_nanami/checkpoints/snapshot_iter_111150.pdz"      
+            if self.use_gst:
+                self.acoustic_model_path = "exp/gst_fastspeech2_azi_nanami/"
+                self.acoustic_model_checkpoint = "snapshot_iter_111150.pdz" 
             elif self.use_vae:
-                self.fastspeech2_stat = "exp/vae_fastspeech2_azi_nanami/speech_stats.npy"
-                self.fastspeech2_pitch_stat = "exp/vae_fastspeech2_azi_nanami/pitch_stats.npy"
-                self.fastspeech2_energy_stat = "exp/vae_fastspeech2_azi_nanami/energy_stats.npy"
-                self.phones_dict = "exp/vae_fastspeech2_azi_nanami/phone_id_map.txt"
-                self.speaker_dict="exp/vae_fastspeech2_azi_nanami/speaker_id_map.txt"
-                self.fastspeech2_config_path = "exp/gst_fastspeech2_azi_nanami/default_multi.yaml"
-                self.fastspeech2_checkpoint = "exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_165560.pdz"
+                self.acoustic_model_path = "exp/vae_fastspeech2_azi_nanami/"
+                self.acoustic_model_checkpoint = "snapshot_iter_165560.pdz"
             else:
-                # self.fastspeech2_stat = "exp/fastspeech2_bili3_aishell3_ljspeech/speech_stats.npy"
-                # self.fastspeech2_pitch_stat = "exp/fastspeech2_bili3_aishell3_ljspeech/pitch_stats.npy"
-                # self.fastspeech2_energy_stat = "exp/fastspeech2_bili3_aishell3_ljspeech/energy_stats.npy"
-                # self.phones_dict = "exp/fastspeech2_bili3_aishell3_ljspeech/phone_id_map.txt"
-                # self.speaker_dict="exp/fastspeech2_bili3_aishell3_ljspeech/speaker_id_map.txt"
-                # self.fastspeech2_config_path = "exp/fastspeech2_bili3_aishell3_ljspeech/default_multi.yaml"
-                # self.fastspeech2_checkpoint = "exp/fastspeech2_bili3_aishell3_ljspeech/checkpoints/snapshot_iter_165560.pdz"
-                self.fastspeech2_stat = "exp/fastspeech2_aishell3_english/speech_stats.npy"
-                self.fastspeech2_pitch_stat = "exp/fastspeech2_aishell3_english/pitch_stats.npy"
-                self.fastspeech2_energy_stat = "exp/fastspeech2_aishell3_english/energy_stats.npy"
-                self.phones_dict = "exp/fastspeech2_aishell3_english/phone_id_map.txt"
-                self.speaker_dict="exp/fastspeech2_aishell3_english/speaker_id_map.txt"
-                self.fastspeech2_config_path = "exp/fastspeech2_aishell3_english/default_multi.yaml"
-                self.fastspeech2_checkpoint = "exp/fastspeech2_aishell3_english/checkpoints/snapshot_iter_430150.pdz"  
+                self.acoustic_model_path = "exp/fastspeech2_aishell3_english/"
+                self.acoustic_model_checkpoint = "snapshot_iter_430150.pdz"
+                # self.acoustic_model_path = "exp/fastspeech2_bili3_aishell3_ljspeech/"
+                # self.acoustic_model_checkpoint = "snapshot_iter_165560.pdz"
+            self.fastspeech2_stat = os.path.join(self.acoustic_model_path, "speech_stats.npy")
+            self.fastspeech2_pitch_stat = os.path.join(self.acoustic_model_path, "pitch_stats.npy")
+            self.fastspeech2_energy_stat = os.path.join(self.acoustic_model_path, "energy_stats.npy")
+            self.phones_dict = os.path.join(self.acoustic_model_path, "phone_id_map.txt")
+            self.speaker_dict=os.path.join(self.acoustic_model_path, "speaker_id_map.txt")
+            self.fastspeech2_config_path = os.path.join(self.acoustic_model_path, "default_multi.yaml")
+            self.fastspeech2_checkpoint = os.path.join(self.acoustic_model_path, "checkpoints/", self.acoustic_model_checkpoint)
             with open(self.fastspeech2_config_path) as f:
                 self.fastspeech2_config = CfgNode(yaml.safe_load(f))
         elif self.acoustic_model == "speedyspeech":
-            self.speedyspeech_config_path = "exp/speedyspeech_azi_nanami_new/default_multi.yaml"
-            self.speedyspeech_checkpoint = "exp/speedyspeech_azi_nanami_new/checkpoints/snapshot_iter_24037.pdz"
-            self.speedyspeech_stat = "exp/speedyspeech_azi_nanami_new/feats_stats.npy"
-            self.tones_dict = "exp/speedyspeech_azi_nanami_new/tone_id_map.txt"
-            self.phones_dict = "exp/speedyspeech_azi_nanami_new/phone_id_map.txt"
-            self.speaker_dict="exp/speedyspeech_azi_nanami_new/speaker_id_map.txt"
+            self.acoustic_model_path = "exp/speedyspeech_azi_nanami_new/"
+            self.acoustic_model_checkpoint = "snapshot_iter_24037.pdz"
+            
+            self.speedyspeech_stat = os.path.join(self.acoustic_model_path, "feats_stats.npy")
+            self.tones_dict = os.path.join(self.acoustic_model_path, "tone_id_map.txt")
+            self.phones_dict = os.path.join(self.acoustic_model_path, "phone_id_map.txt")
+            self.speaker_dict = os.path.join(self.acoustic_model_path, "speaker_id_map.txt")
+            self.speedyspeech_config_path = os.path.join(self.acoustic_model_path, "default_multi.yaml")
+            self.speedyspeech_checkpoint = os.path.join(self.acoustic_model_path, "checkpoints/", self.acoustic_model_checkpoint)
             with open(self.speedyspeech_config_path) as f:
                 self.speedyspeech_config = CfgNode(yaml.safe_load(f))
         self.loadSpeakerName(self.speaker_dict)
@@ -307,28 +299,28 @@ class App(QMainWindow):
         }
 
         if self.vocoder == "pwg":
-            self.pwg_config_path = "pretrained_models/pwg_aishell3_ckpt_0.5/default.yaml"
-            self.pwg_checkpoint = "pretrained_models/pwg_aishell3_ckpt_0.5/snapshot_iter_1000000.pdz" 
-            self.pwg_stat = "pretrained_models/pwg_aishell3_ckpt_0.5/feats_stats.npy"
-            with open(self.pwg_config_path) as f:
-                self.pwg_config = CfgNode(yaml.safe_load(f))
-            checkpoint = self.pwg_checkpoint
-            config = self.pwg_config
             generator_type = "pwgan"
+            self.vocoder_model_path = "pretrained_models/pwg_aishell3_ckpt_0.5/"
+            self.vocoder_model_checkpoint = "snapshot_iter_1000000.pdz"
         elif self.vocoder == "hifigan":
-            self.hifigan_config_path = "pretrained_models/hifigan_azi_nanami/default.yaml"
-            self.hifigan_checkpoint = "pretrained_models/hifigan_azi_nanami/checkpoints/snapshot_iter_310000.pdz" 
-            self.hifigan_stat = "pretrained_models/hifigan_azi_nanami/feats_stats.npy"
-            with open(self.hifigan_config_path) as f:
-                self.hifigan_config = CfgNode(yaml.safe_load(f))
-            checkpoint = self.hifigan_checkpoint
-            config = self.hifigan_config
             generator_type = "hifigan"
+            self.vocoder_model_path = "pretrained_models/hifigan_azi_nanami/"
+            self.vocoder_model_checkpoint = "snapshot_iter_310000.pdz"
+        elif self.vocoder == "hifigan_ss":
+            generator_type = "hifigan"
+            self.vocoder_model_path = "pretrained_models/hifigan_azi_nanami/"
+            self.vocoder_model_checkpoint = "snapshot_iter_310000.pdz"
+
+        self.vocoder_config_path = os.path.join(self.vocoder_model_path, "default.yaml")
+        self.vocoder_checkpoint = os.path.join(self.vocoder_model_path, "checkpoints/", self.vocoder_model_checkpoint)
+        self.vocoder_stat = os.path.join(self.vocoder_model_path, "feats_stats.npy")
+        with open(self.vocoder_config_path) as f:
+            config = CfgNode(yaml.safe_load(f))
 
         generator_class = getattr(ttsModels,
                               class_map[generator_type])
         self.generator = generator_class(**config["generator_params"])
-        state_dict = paddle.load(checkpoint)
+        state_dict = paddle.load(self.vocoder_checkpoint)
         self.generator.set_state_dict(state_dict["generator_params"])
         self.generator.remove_weight_norm()
         self.generator.eval()
@@ -415,10 +407,7 @@ class App(QMainWindow):
                 std = paddle.to_tensor(std)
                 speedyspeech_normalizer = ZScore(mu, std)
 
-            if self.vocoder == "pwg":
-                stat = np.load(self.pwg_stat)
-            elif self.vocoder == "hifigan":
-                stat = np.load(self.hifigan_stat)
+            stat = np.load(self.vocoder_stat)
             mu, std = stat
             mu = paddle.to_tensor(mu)
             std = paddle.to_tensor(std)
@@ -436,7 +425,7 @@ class App(QMainWindow):
 
             if self.vocoder == "pwg":
                 vocoder_inference = PWGInference(vocoder_normalizer, self.generator)
-            elif self.vocoder == "hifigan":
+            elif self.vocoder == "hifigan" or self.vocoder == "hifigan_ss":
                 vocoder_inference = HiFiGANInference(vocoder_normalizer, self.generator)
             vocoder_inference.eval()
 
