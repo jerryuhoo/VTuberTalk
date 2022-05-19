@@ -626,6 +626,7 @@ class App(QMainWindow):
         elif text == "speedyspeech":
             self.acoustic_model = "speedyspeech"
             self.use_gst = False
+            self.use_vae = False
         elif text == "vae-fastspeech2":
             self.acoustic_model = "fastspeech2"
             self.use_vae = True
