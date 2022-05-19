@@ -107,9 +107,10 @@ class App(QMainWindow):
         self.voc_model_label.setText("vocoder：")
 
         self.voc_model_combo = QComboBox(self)
-        self.voc_model_combo.addItem("parallel wavegan")
+        self.voc_model_combo.addItem("pwg")
         self.voc_model_combo.addItem("hifigan")
         self.voc_model_combo.addItem("hifigan_ss")
+        self.voc_model_combo.addItem("wavernn")
 
         self.voc_model_combo.move(combobox_x, 160)
         self.voc_model_combo.resize(120, 40)
@@ -296,6 +297,7 @@ class App(QMainWindow):
             "mb_melgan": "MelGANGenerator",
             "pwgan": "PWGGenerator",
             "style_melgan": "StyleMelGANGenerator",
+            "wavernn": "WaveRNN",
         }
 
         if self.vocoder == "pwg":
@@ -310,7 +312,9 @@ class App(QMainWindow):
             generator_type = "hifigan"
             self.vocoder_model_path = "pretrained_models/hifigan_azi_nanami/"
             self.vocoder_model_checkpoint = "snapshot_iter_310000.pdz"
-
+        else:
+            self.messageDialog("暂不支持！")
+            return
         self.vocoder_config_path = os.path.join(self.vocoder_model_path, "default.yaml")
         self.vocoder_checkpoint = os.path.join(self.vocoder_model_path, "checkpoints/", self.vocoder_model_checkpoint)
         self.vocoder_stat = os.path.join(self.vocoder_model_path, "feats_stats.npy")
@@ -361,10 +365,14 @@ class App(QMainWindow):
 
     def loadStaticVocoderModel(self):   
         # vocoder
-        if self.vocoder == "hifigan":
+        if self.vocoder == "pwg":
+            self.voc_inference = paddle.jit.load(os.path.join("pretrained_models/pwg_baker_static_0.4", "pwgan_csmsc"))
+        elif self.vocoder == "hifigan":
             self.voc_inference = paddle.jit.load(os.path.join("pretrained_models/fastspeech2_aishell3_english_static", "hifigan_csmsc"))
         elif self.vocoder == "hifigan_ss":
             self.voc_inference = paddle.jit.load(os.path.join("pretrained_models/speedyspeech_azi_nanami_static", "hifigan_csmsc"))
+        elif self.vocoder == "wavernn":
+            self.voc_inference = paddle.jit.load(os.path.join("pretrained_models/wavernn_csmsc_static_1.0.0", "wavernn_csmsc"))
 
     @pyqtSlot()
     def onGenerateButtonClicked(self):
@@ -666,13 +674,7 @@ class App(QMainWindow):
         self.loadFrontend()
 
     def onVocModelComboboxChanged(self, text):
-        if text == "parallel wavegan":
-            self.vocoder = "pwg"
-        elif text == "hifigan":
-            self.vocoder = "hifigan"
-        elif text == "hifigan_ss":
-            self.vocoder = "hifigan_ss"
-
+        self.vocoder = text
         if not self.use_static:
             self.loadDynamicVocoderModel()
         else:
