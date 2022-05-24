@@ -269,13 +269,13 @@ mfa align <data/wav/speaker_name/split/> MFA/pinyin.dict MFA/mandarin.zip <data/
 
 #### 生成duration
 
-##### 1. fastspeech2 模型（多人）
+##### 1. fastspeech2 模型
 
 ```shell
 python tools/gen_duration_from_textgrid.py \
     --inputdir=data/TextGrid \
     --output=data/durations.txt \
-    --config=train/conf/fastspeech2/default_multi.yaml
+    --config=train/conf/fastspeech2/default.yaml
 ```
 
 ##### 2. speedyspeech 模型
@@ -284,12 +284,12 @@ python tools/gen_duration_from_textgrid.py \
 python tools/gen_duration_from_textgrid.py \
     --inputdir=data/TextGrid \
     --output=data/durations.txt \
-    --config=train/conf/speedyspeech/default_multi.yaml
+    --config=train/conf/speedyspeech/default.yaml
 ```
 
 #### 提取features
 
-##### 1. fastspeech2 模型（多人）
+##### 1. fastspeech2 模型
 
 ```shell
 python train/exps/fastspeech2/preprocess.py \
@@ -297,14 +297,12 @@ python train/exps/fastspeech2/preprocess.py \
     --rootdir=data/ \
     --dumpdir=dump \
     --dur-file=data/durations.txt \
-    --config=train/conf/fastspeech2/default_multi.yaml \
+    --config=train/conf/fastspeech2/default.yaml \
     --num-cpu=16 \
     --cut-sil=True
 ```
 
 ##### 2. speedyspeech 模型
-
-多人
 
 ```shell
 python train/exps/speedyspeech/preprocess.py \
@@ -312,7 +310,7 @@ python train/exps/speedyspeech/preprocess.py \
     --rootdir=data/ \
     --dumpdir=dump \
     --dur-file=data/durations.txt \
-    --config=train/conf/speedyspeech/default_multi.yaml \
+    --config=train/conf/speedyspeech/default.yaml \
     --num-cpu=16 \
     --cut-sil=True \
     --use-relative-path=True
@@ -382,8 +380,6 @@ python train/exps/fastspeech2/normalize.py \
 
 ##### 2. speedyspeech 模型
 
-多人
-
 ```shell
 python train/exps/speedyspeech/normalize.py \
     --metadata=dump/train/raw/metadata.jsonl \
@@ -415,13 +411,13 @@ python train/exps/speedyspeech/normalize.py \
 
 ## 3. 训练
 
-### 3.1. fastspeech2 模型（多人）
+### 3.1. fastspeech2 模型
 
 ```shell
 python train/exps/fastspeech2/train.py \
     --train-metadata=dump/train/norm/metadata.jsonl \
     --dev-metadata=dump/dev/norm/metadata.jsonl \
-    --config=train/conf/fastspeech2/default_multi.yaml \
+    --config=train/conf/fastspeech2/default.yaml \
     --output-dir=exp/fastspeech2_bili3_aishell3 \
     --ngpu=1 \
     --phones-dict=dump/phone_id_map.txt \
@@ -430,13 +426,11 @@ python train/exps/fastspeech2/train.py \
 
 ### 3.2. speedyspeech模型
 
-多人
-
 ```shell
 python train/exps/speedyspeech/train.py \
     --train-metadata=dump/train/norm/metadata.jsonl \
     --dev-metadata=dump/dev/norm/metadata.jsonl \
-    --config=train/conf/speedyspeech/default_multi.yaml \
+    --config=train/conf/speedyspeech/default.yaml \
     --output-dir=exp/speedyspeech_azi_nanami \
     --ngpu=1 \
     --phones-dict=dump/phone_id_map.txt \
@@ -472,7 +466,7 @@ visualdl --logdir <log folder path>
 ```shell
 python train/exps/synthesize_e2e.py \
         --am=fastspeech2_aishell3 \
-        --am_config=train/conf/fastspeech2/default_multi.yaml \
+        --am_config=train/conf/fastspeech2/default.yaml \
         --am_ckpt=exp/fastspeech2_bili3_aishell3/checkpoints/snapshot_iter_<iter num>.pdz \
         --am_stat=dump/train/speech_stats.npy \
         --voc=pwgan_aishell3 \
