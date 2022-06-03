@@ -77,21 +77,17 @@ pip install -r requirements_cpu.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
     │   │   ├── raw
     │   │   ├── clean_raw2
     │   │   ├── unrecognized
-    │   │   ├── unused          
-    │   │   └── split   
-    │   │       ├── .wav 
+    │   │   ├── unused
+    │   │   └── split
+    │   │       ├── .wav
     │   │       ├── .txt
-    │   │       └── .lab 
-    │   └── speaker_name2
-    ├── TextGrid_temp
-    │   ├── speaker_name1
-    │   │   └── .TextGrid
+    │   │       └── .lab
     │   └── speaker_name2
     ├── wav
     │   ├── speaker_name1
-    │   │   ├── .wav 
+    │   │   ├── .wav
     │   │   ├── .txt
-    │   │   └── .lab 
+    │   │   └── .lab
     │   └── speaker_name2
     ├── TextGrid
     │   ├── speaker_name1
@@ -214,7 +210,7 @@ python tools/hanzi_to_pinyin.py --path <data/wav_temp/speaker_name/split/>
 
 ### 2.9. 清理文件
 
-处理后有用的文件只有wav_temp/speaker/split和TextGrid_temp中的信息，在做mfa之前，把制作好的单人数据集中的split文件夹中的所有内容移动到wav/speaker里，同时把TextGrid_temp里的文件夹移动到TextGrid里。
+处理后有用的文件只有wav_temp/speaker/split中的信息，在做mfa之前，把制作好的单人数据集中的split文件夹中的所有内容移动到wav/speaker里。
 
 ```shell
 cp -r data/wav_temp/$speaker/split/ data/wav/$speaker/
