@@ -16,7 +16,7 @@ import os
 from tqdm import tqdm
 
 import paddle
-from paddlespeech.cli import ASRExecutor
+from paddlespeech.cli.asr import ASRExecutor
 
 def process(path, lang, sr):
     if os.path.exists(path):
